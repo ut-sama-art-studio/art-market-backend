@@ -1,0 +1,18 @@
+type User {
+    id: ID!
+    username: String!
+    email: String!
+
+    merchItems: [MerchItems!]
+}
+
+type MerchItems {
+    id: ID!
+    name: String!
+    description: String!
+    user: User!
+}
+
+type Query {
+    merchItems: [MerchItems!]!
+}
