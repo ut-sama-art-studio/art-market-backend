@@ -2,48 +2,42 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 
 	// import "postgres" driver without directly referencing the library
 	_ "github.com/lib/pq"
 )
 
-type Database struct {
-	DB *sql.DB
-}
-
-var dbConn = &Database{}
+var Db *sql.DB
 
 const maxOpenDBConns = 10
 const maxIdleDBConns = 5
 const connMaxDBLifetime = 5 * time.Minute
 
-func ConnectPostgres(dsn string) (*Database, error) {
-	db, err := sql.Open("postgres", dsn)
+func InitDB(dbString string) error {
+	db, err := sql.Open("postgres", dbString)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	db.SetMaxOpenConns(maxOpenDBConns)
 	db.SetMaxIdleConns(maxIdleDBConns)
 	db.SetConnMaxLifetime(connMaxDBLifetime)
 
-	err = testDB(db)
-	if err != nil {
-		return nil, err
-	}
-
-	dbConn.DB = db
-	return dbConn, nil
-}
-
-func testDB(db *sql.DB) error {
-	err := db.Ping()
-	if err != nil {
-		fmt.Println("Error", err)
+	// test db is connected
+	if err = db.Ping(); err != nil {
 		return err
 	}
-	fmt.Println("*** Pinged database successfully! ***")
+
+	Db = db
 	return nil
+}
+
+func CloseDB() error {
+	return Db.Close()
+}
+
+// TODO: set up auto migrate on server startup?
+func Migrate() {
+
 }

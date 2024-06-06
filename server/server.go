@@ -8,9 +8,11 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"github.com/ut-sama-art-studio/art-market-backend/database"
 	"github.com/ut-sama-art-studio/art-market-backend/graph"
+	"github.com/ut-sama-art-studio/art-market-backend/graph/resolvers"
 )
 
 type Config struct {
@@ -22,42 +24,41 @@ type Application struct {
 	// Models
 }
 
-func (app *Application) Serve(port string) error {
-	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+func (app *Application) Serve(router *chi.Mux) {
+	server := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &resolvers.Resolver{}}))
 
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	router.Handle("/query", server)
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	return http.ListenAndServe(":"+port, nil)
+	address := fmt.Sprintf(":%s", app.Config.Port)
+	log.Printf("Connect to http://localhost%s/ for GraphQL playground", address)
+
+	if err := http.ListenAndServe(address, router); err != nil {
+		log.Fatalf("Could not start server: %v", err)
+	}
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
+
 	port := os.Getenv("PORT")
 	fmt.Println("API is listening on port", port)
 
-	cfg := Config{
-		Port: port,
-	}
+	cfg := Config{Port: port}
+	router := chi.NewRouter()
 
-	dsn := os.Getenv("DSN")
-	dbConn, err := database.ConnectPostgres(dsn)
-	if err != nil {
-		log.Fatal(err)
+	dbString := os.Getenv("DBSTRING")
+
+	if err := database.InitDB(dbString); err != nil {
+		log.Fatalf("Error connecting to database: %v", err)
 	}
-	defer dbConn.DB.Close()
+	defer database.CloseDB()
 
 	app := &Application{
 		Config: cfg,
-		// TODO: add models
 	}
 
-	err = app.Serve(port)
-	if err != nil {
-		log.Fatal(err)
-	}
+	app.Serve(router)
 }

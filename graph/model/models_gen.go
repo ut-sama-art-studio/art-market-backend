@@ -2,28 +2,36 @@
 
 package model
 
-type Link struct {
-	ID      string `json:"id"`
-	Title   string `json:"title"`
-	Address string `json:"address"`
-	User    *User  `json:"user"`
+type Login struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-type Login struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+type MerchItem struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Type        *string   `json:"type,omitempty"`
+	Description *string   `json:"description,omitempty"`
+	Images      []*string `json:"images"`
+	Price       float64   `json:"price"`
+	Inventory   *int      `json:"inventory,omitempty"`
 }
 
 type Mutation struct {
 }
 
-type NewLink struct {
-	Title   string `json:"title"`
-	Address string `json:"address"`
+type NewMerch struct {
+	Name        string    `json:"name"`
+	Type        *string   `json:"type,omitempty"`
+	Description *string   `json:"description,omitempty"`
+	Images      []*string `json:"images"`
+	Price       float64   `json:"price"`
+	Inventory   *int      `json:"inventory,omitempty"`
 }
 
 type NewUser struct {
-	Username string `json:"username"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
@@ -35,6 +43,10 @@ type RefreshTokenInput struct {
 }
 
 type User struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID             string  `json:"id"`
+	Name           string  `json:"name"`
+	Email          string  `json:"email"`
+	Password       string  `json:"password"`
+	ProfilePicture *string `json:"profilePicture,omitempty"`
+	Bio            *string `json:"bio,omitempty"`
 }

@@ -1,14 +1,14 @@
 include .env
 
 create-container:
-    docker run --name ${DB_CONTAINER_NAME} -p ${DB_PORT}:${DB_PORT} -e POSTGRES_USER=${POSTGRES_USER} \
-     -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:12-alpine
+	docker run --name ${DB_CONTAINER_NAME} -p ${DB_PORT}:${DB_PORT} -e POSTGRES_USER=${POSTGRES_USER} \
+	 -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:12-alpine
 
 create-db:
-    docker exec -it ${DB_CONTAINER_NAME} createdb --username=${POSTGRES_USER} --owner=${POSTGRES_USER} ${DB_NAME}
+	docker exec -it ${DB_CONTAINER_NAME} createdb --username=${POSTGRES_USER} --owner=${POSTGRES_USER} ${DB_NAME}
 
 # generate graphql based on schema.graphql
-graphql:
+graphql-generate:
 	@echo "Generating graphql go files..."
 	@go run github.com/99designs/gqlgen generate
 	@echo "Generate successful"

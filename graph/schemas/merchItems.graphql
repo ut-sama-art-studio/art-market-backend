@@ -1,0 +1,22 @@
+type MerchItem {
+    id: ID!
+    name: String!
+    type: String
+    description: String
+    images: [String]!
+    price: Float!
+    inventory: Int
+}
+
+input NewMerch {
+    name: String!
+    type: String
+    description: String
+    images: [String]!
+    price: Float!
+    inventory: Int
+}
+
+extend type Mutation {
+    createMerch(input: NewMerch!): MerchItem!
+}
