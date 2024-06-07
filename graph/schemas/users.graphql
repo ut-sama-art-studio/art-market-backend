@@ -7,14 +7,21 @@ type User {
     bio: String
 }
 
-input RefreshTokenInput {
-    token: String!
-}
-
 input NewUser {
     name: String!
     email: String!
     password: String!
+}
+
+input UpdateUser {
+    name: String
+    email: String
+    profilePicture: String
+    bio: String
+}
+
+input RefreshTokenInput {
+    token: String!
 }
 
 input Login {
@@ -24,6 +31,13 @@ input Login {
 
 extend type Mutation {
     createUser(input: NewUser!): User!
+    updateUser(id: ID!, input: UpdateUser!): User!
+    deleteUser(id: ID!): Boolean!
     login(input: Login!): String!
     refreshToken(input: RefreshTokenInput!): String!
+}
+
+extend type Query {
+    me: User!
+    user(id: ID!): User!
 }

@@ -17,9 +17,11 @@ graphql-generate:
 add-migration-init:
 	@sqlx migrate add -r init
 
+# applies all migrations
 migrate-up:
 	@sqlx migrate run --database-url "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable"
 
+# rollback one migration
 migrate-down:
 	@sqlx migrate revert --database-url "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable"
 

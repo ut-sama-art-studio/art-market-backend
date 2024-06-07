@@ -42,6 +42,13 @@ type RefreshTokenInput struct {
 	Token string `json:"token"`
 }
 
+type UpdateUser struct {
+	Name           *string `json:"name,omitempty"`
+	Email          *string `json:"email,omitempty"`
+	ProfilePicture *string `json:"profilePicture,omitempty"`
+	Bio            *string `json:"bio,omitempty"`
+}
+
 type User struct {
 	ID             string  `json:"id"`
 	Name           string  `json:"name"`

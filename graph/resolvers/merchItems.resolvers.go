@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ut-sama-art-studio/art-market-backend/graph"
 	"github.com/ut-sama-art-studio/art-market-backend/graph/model"
 )
 
@@ -15,3 +16,17 @@ import (
 func (r *mutationResolver) CreateMerch(ctx context.Context, input model.NewMerch) (*model.MerchItem, error) {
 	panic(fmt.Errorf("not implemented: CreateMerch - createMerch"))
 }
+
+// Merch is the resolver for the merch field.
+func (r *queryResolver) Merch(ctx context.Context, id string) (*model.MerchItem, error) {
+	panic(fmt.Errorf("not implemented: Merch - merch"))
+}
+
+// Mutation returns graph.MutationResolver implementation.
+func (r *Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
+
+// Query returns graph.QueryResolver implementation.
+func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
+
+type mutationResolver struct{ *Resolver }
+type queryResolver struct{ *Resolver }
