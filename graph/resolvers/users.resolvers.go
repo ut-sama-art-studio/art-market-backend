@@ -33,7 +33,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 		log.Print("Error creating user: ", err)
 		return nil, err
 	}
-	return &model.User{ID: userID, Email: user.Email, Password: user.Password, Name: user.Name}, nil
+	return &model.User{ID: userID, Email: user.Email, Name: user.Name}, nil
 }
 
 // UpdateUser is the resolver for the updateUser field.
@@ -60,7 +60,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input mode
 		log.Print("Error updating user: ", err)
 		return nil, err
 	}
-	return &model.User{ID: user.ID, Name: user.Name, Email: user.Email, Password: user.Password, ProfilePicture: user.ProfilePicture, Bio: user.Bio}, nil
+	return &model.User{ID: user.ID, Name: user.Name, Email: user.Email, ProfilePicture: user.ProfilePicture, Bio: user.Bio}, nil
 }
 
 // DeleteUser is the resolver for the deleteUser field.
@@ -95,5 +95,27 @@ func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error
 		log.Print("Error fetching user: ", err)
 		return nil, err
 	}
-	return &model.User{ID: user.ID, Name: user.Name, Email: user.Email, Password: user.Password, ProfilePicture: user.ProfilePicture, Bio: user.Bio}, nil
+	return &model.User{ID: user.ID, Name: user.Name, Email: user.Email, ProfilePicture: user.ProfilePicture, Bio: user.Bio}, nil
+}
+
+// Users is the resolver for the users field.
+func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
+	allUsers, err := users.GetAllUsers()
+	if err != nil {
+		log.Print("Error fetching users: ", err)
+		return nil, err
+	}
+
+	var result []*model.User
+	for _, user := range allUsers {
+		result = append(result, &model.User{
+			ID:             user.ID,
+			Name:           user.Name,
+			Email:          user.Email,
+			ProfilePicture: user.ProfilePicture,
+			Bio:            user.Bio,
+		})
+	}
+
+	return result, nil
 }

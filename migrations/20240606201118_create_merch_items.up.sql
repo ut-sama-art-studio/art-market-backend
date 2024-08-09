@@ -9,5 +9,5 @@ CREATE TABLE IF NOT EXISTS "MerchItem" (
     -- "images" text[],
     "inventory" int NOT NULL,
     "type" varchar NOT NULL,
-    FOREIGN KEY ("ownerId") REFERENCES "USER" ("id") ON DELETE CASCADE
+    FOREIGN KEY ("ownerId") REFERENCES "User" ("id") ON DELETE CASCADE
 );

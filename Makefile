@@ -9,6 +9,7 @@ create-db:
 
 # generate graphql based on schema.graphql
 graphql-generate:
+	go get github.com/99designs/gqlgen@v0.17.47
 	@echo "Generating graphql go files..."
 	@go run github.com/99designs/gqlgen generate
 	@echo "Generate successful"

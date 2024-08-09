@@ -9,10 +9,12 @@ require (
 	github.com/lib/pq v1.10.2
 	github.com/vektah/gqlparser/v2 v2.5.12
 	golang.org/x/crypto v0.24.0
+	golang.org/x/oauth2 v0.22.0
 )
 
 require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
