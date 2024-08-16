@@ -9,30 +9,42 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 	"github.com/ut-sama-art-studio/art-market-backend/database"
 	"github.com/ut-sama-art-studio/art-market-backend/graph"
+	"github.com/ut-sama-art-studio/art-market-backend/graph/directives"
 	"github.com/ut-sama-art-studio/art-market-backend/graph/resolvers"
+	"github.com/ut-sama-art-studio/art-market-backend/middlewares"
 )
 
 type Config struct {
-	Port string
+	Port      string
+	ApiPrefix string
 }
 
 type Application struct {
 	Config Config
-	// Models
 }
 
 func (app *Application) Serve(router *chi.Mux) {
-	server := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &resolvers.Resolver{}}))
+	apiRouter := chi.NewRouter()
+	apiRouter.Use(middlewares.AuthMiddleware)
 
-	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	router.Handle("/query", server)
+	router.Mount(app.Config.ApiPrefix, apiRouter)
+	app.AddAPIRoutes(apiRouter)
+
+	// Add graphql
+	graphConfig := graph.Config{Resolvers: &resolvers.Resolver{}}
+	graphConfig.Directives.Auth = directives.AuthDirective
+	server := handler.NewDefaultServer(graph.NewExecutableSchema(graphConfig))
+	if os.Getenv("NODE_ENV") != "production" {
+		apiRouter.Handle("/", playground.Handler("GraphQL playground", app.Config.ApiPrefix+"/graphql"))
+		log.Printf("Connect to http://localhost:%s%s for GraphQL playground", app.Config.Port, app.Config.ApiPrefix)
+	}
+	apiRouter.Handle("/graphql", server)
 
 	address := fmt.Sprintf(":%s", app.Config.Port)
-	log.Printf("Connect to http://localhost%s/ for GraphQL playground", address)
-
 	if err := http.ListenAndServe(address, router); err != nil {
 		log.Fatalf("Could not start server: %v", err)
 	}
@@ -46,8 +58,17 @@ func main() {
 	port := os.Getenv("PORT")
 	fmt.Println("API is listening on port", port)
 
-	cfg := Config{Port: port}
+	cfg := Config{Port: port, ApiPrefix: "/api"}
 	router := chi.NewRouter()
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{os.Getenv("FRONT_END_URL_LOCALHOST"), os.Getenv("FRONT_END_URL")},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+		// Debug:            os.Getenv("ENV") == "development",
+	}))
 
 	dbString := os.Getenv("DBSTRING")
 

@@ -6,6 +6,8 @@ type MerchItem {
     images: [String]!
     price: Float!
     inventory: Int
+    width: Float
+    height: Float
 }
 
 input NewMerch {
@@ -15,10 +17,26 @@ input NewMerch {
     images: [String]!
     price: Float!
     inventory: Int
+    width: Float
+    height: Float
+}
+
+input UpdateMerch {
+    id: ID!
+    name: String
+    type: String
+    description: String
+    images: [String]
+    price: Float
+    inventory: Int
+    width: Float
+    height: Float
 }
 
 extend type Mutation {
     createMerch(input: NewMerch!): MerchItem!
+    updateMerch(input: UpdateMerch!): MerchItem!
+    deleteMerch(id: ID!): Boolean!
 }
 
 extend type Query {

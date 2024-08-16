@@ -37,7 +37,7 @@ func CloseDB() error {
 	return Db.Close()
 }
 
-// TODO: set up auto migrate on server startup?
+// TODO: set up auto migrate on server startup
 func Migrate() {
 
 }

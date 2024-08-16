@@ -2,7 +2,6 @@ package users
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 
 	"github.com/ut-sama-art-studio/art-market-backend/database"
@@ -10,45 +9,77 @@ import (
 
 // this User struct models database object, where as the one in model.user is a data transfer object
 type User struct {
-	ID             string  `json:"id"`
-	Name           string  `json:"name"`
-	Email          string  `json:"email"`
-	Password       string  `json:"password"`
-	ProfilePicture *string `json:"profilePicture,omitempty"`
+	ID      string `json:"id"`
+	OauthID string `json:"oauth_id"`
+	Role    string `json:"role"`
+
+	Username       string  `json:"username,omitempty"`
+	Name           string  `json:"name"` // display name
+	Email          *string `json:"email,omitempty"`
+	Password       *string `json:"password,omitempty"`
+	ProfilePicture *string `json:"profile_picture,omitempty"`
 	Bio            *string `json:"bio,omitempty"`
 }
 
 func (user User) Insert() (string, error) {
-	// use " " around names with uppercase
+	// SQL query to insert a new user into the User table
 	query := `
-		INSERT INTO "User" (name, email, password, "profilePicture", bio)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id
-	`
-
+        INSERT INTO "User" (oauth_id, username, name, email, password, profile_picture, bio)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING id
+    `
+	// log.Printf("Inserting user: oauth_id=%s, name=%s, email=%s, password=%s, profile_picture=%s, bio=%s",
+	// 	user.OauthID,
+	// 	user.Name,
+	// 	user.Email,
+	// 	user.Password,
+	// 	user.ProfilePicture,
+	// 	user.Bio,
+	// )
 	var id string
-	err := database.Db.QueryRow(query, user.Name, user.Email, user.Password, user.ProfilePicture, user.Bio).Scan(&id)
+	// Execute the query and get the newly inserted user's ID
+	err := database.Db.QueryRow(query, user.OauthID, user.Username, user.Name, user.Email, user.Password, user.ProfilePicture, user.Bio).Scan(&id)
 	if err != nil {
 		log.Print("Error executing query: ", err)
 		return "", err
 	}
 
-	log.Print("Row inserted!")
+	log.Print("User created: ", id)
 	return id, nil
+}
+
+func GetUserByOauthID(oauthID string) (*User, error) {
+	query := `
+		SELECT id, username, name, email, password, profile_picture, bio
+		FROM "User"
+		WHERE oauth_id = $1
+	`
+
+	var user User
+	err := database.Db.QueryRow(query, oauthID).Scan(&user.ID, &user.Username, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.Bio)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		log.Print("Error executing query: ", err)
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 func GetUserByID(id string) (*User, error) {
 	query := `
-		SELECT id, name, email, password, "profilePicture", bio
+		SELECT id, username, name, email, password, profile_picture, bio
 		FROM "User"
 		WHERE id = $1
 	`
 
 	var user User
-	err := database.Db.QueryRow(query, id).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.Bio)
+	err := database.Db.QueryRow(query, id).Scan(&user.ID, &user.Username, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.Bio)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user with ID %s not found", id)
+			return nil, nil
 		}
 		log.Print("Error executing query: ", err)
 		return nil, err
@@ -62,7 +93,7 @@ func (user *User) Update() error {
 	// Construct SQL query to update user information
 	query := `
 		UPDATE "User"
-		SET name = $1, email = $2, "profilePicture" = $3, bio = $4
+		SET name = $1, email = $2, profile_picture = $3, bio = $4
 		WHERE id = $5
 	`
 
@@ -92,4 +123,37 @@ func DeleteById(id string) error {
 	}
 
 	return nil
+}
+
+// retrieves all users from the database
+func GetAllUsers() ([]User, error) {
+	query := `
+		SELECT id, username, name, email, password, profile_picture, bio
+		FROM "User"
+	`
+
+	rows, err := database.Db.Query(query)
+	if err != nil {
+		log.Print("Error executing query: ", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []User
+	for rows.Next() {
+		var user User
+		err := rows.Scan(&user.ID, &user.Username, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.Bio)
+		if err != nil {
+			log.Print("Error scanning row: ", err)
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		log.Print("Error with rows: ", err)
+		return nil, err
+	}
+
+	return users, nil
 }

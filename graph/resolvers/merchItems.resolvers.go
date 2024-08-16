@@ -17,6 +17,16 @@ func (r *mutationResolver) CreateMerch(ctx context.Context, input model.NewMerch
 	panic(fmt.Errorf("not implemented: CreateMerch - createMerch"))
 }
 
+// UpdateMerch is the resolver for the updateMerch field.
+func (r *mutationResolver) UpdateMerch(ctx context.Context, input model.UpdateMerch) (*model.MerchItem, error) {
+	panic(fmt.Errorf("not implemented: UpdateMerch - updateMerch"))
+}
+
+// DeleteMerch is the resolver for the deleteMerch field.
+func (r *mutationResolver) DeleteMerch(ctx context.Context, id string) (bool, error) {
+	panic(fmt.Errorf("not implemented: DeleteMerch - deleteMerch"))
+}
+
 // Merch is the resolver for the merch field.
 func (r *queryResolver) Merch(ctx context.Context, id string) (*model.MerchItem, error) {
 	panic(fmt.Errorf("not implemented: Merch - merch"))

@@ -1,15 +1,13 @@
+directive @auth on FIELD_DEFINITION
+
 type User {
     id: ID!
     name: String!
-    email: String!
+    username: String
+    email: String
     profilePicture: String
     bio: String
-}
-
-input NewUser {
-    name: String!
-    email: String!
-    password: String!
+    role: String
 }
 
 input UpdateUser {
@@ -23,16 +21,9 @@ input RefreshTokenInput {
     token: String!
 }
 
-input Login {
-    email: String!
-    password: String!
-}
-
 extend type Mutation {
-    createUser(input: NewUser!): User!
-    updateUser(id: ID!, input: UpdateUser!): User!
-    deleteUser(id: ID!): Boolean!
-    login(input: Login!): String!
+    updateUser(id: ID!, input: UpdateUser!): User! @auth
+    deleteUser(id: ID!): Boolean! @auth
     refreshToken(input: RefreshTokenInput!): String!
 }
 

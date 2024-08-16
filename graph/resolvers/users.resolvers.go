@@ -10,31 +10,9 @@ import (
 	"log"
 
 	"github.com/ut-sama-art-studio/art-market-backend/graph/model"
-	"github.com/ut-sama-art-studio/art-market-backend/services/auth"
+	"github.com/ut-sama-art-studio/art-market-backend/middlewares"
 	"github.com/ut-sama-art-studio/art-market-backend/services/users"
 )
-
-// CreateUser is the resolver for the createUser field.
-func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
-	var user users.User
-	user.Name = input.Name
-	user.Email = input.Email
-
-	// hash password before storing in DB
-	passwordHash, err := auth.Hash(user.Password)
-	if err != nil {
-		log.Print("Error hashing password: ", err)
-		return nil, err
-	}
-	user.Password = passwordHash
-
-	userID, err := user.Insert()
-	if err != nil {
-		log.Print("Error creating user: ", err)
-		return nil, err
-	}
-	return &model.User{ID: userID, Email: user.Email, Name: user.Name}, nil
-}
 
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input model.UpdateUser) (*model.User, error) {
@@ -48,7 +26,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input mode
 		user.Name = *input.Name
 	}
 	if input.Email != nil {
-		user.Email = *input.Email
+		user.Email = input.Email
 	}
 	if input.ProfilePicture != nil {
 		user.ProfilePicture = input.ProfilePicture
@@ -73,11 +51,6 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, err
 	return true, nil
 }
 
-// Login is the resolver for the login field.
-func (r *mutationResolver) Login(ctx context.Context, input model.Login) (string, error) {
-	panic(fmt.Errorf("not implemented: Login - login"))
-}
-
 // RefreshToken is the resolver for the refreshToken field.
 func (r *mutationResolver) RefreshToken(ctx context.Context, input model.RefreshTokenInput) (string, error) {
 	panic(fmt.Errorf("not implemented: RefreshToken - refreshToken"))
@@ -85,7 +58,21 @@ func (r *mutationResolver) RefreshToken(ctx context.Context, input model.Refresh
 
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: Me - me"))
+	userId := middlewares.ContextUserID(ctx)
+	user, err := users.GetUserByID(userId)
+	if err != nil {
+		log.Print("Error fetching user: ", err)
+		return nil, err
+	}
+
+	return &model.User{
+		ID:             user.ID,
+		Name:           user.Name,
+		Username:       &user.Username,
+		Email:          user.Email,
+		ProfilePicture: user.ProfilePicture,
+		Bio:            user.Bio,
+	}, nil
 }
 
 // User is the resolver for the user field.
@@ -95,7 +82,7 @@ func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error
 		log.Print("Error fetching user: ", err)
 		return nil, err
 	}
-	return &model.User{ID: user.ID, Name: user.Name, Email: user.Email, ProfilePicture: user.ProfilePicture, Bio: user.Bio}, nil
+	return &model.User{ID: user.ID, Name: user.Name, Username: &user.Username, Email: user.Email, ProfilePicture: user.ProfilePicture, Bio: user.Bio}, nil
 }
 
 // Users is the resolver for the users field.
@@ -111,6 +98,7 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 		result = append(result, &model.User{
 			ID:             user.ID,
 			Name:           user.Name,
+			Username:       &user.Username,
 			Email:          user.Email,
 			ProfilePicture: user.ProfilePicture,
 			Bio:            user.Bio,
