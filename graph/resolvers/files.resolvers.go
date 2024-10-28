@@ -11,7 +11,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/ut-sama-art-studio/art-market-backend/graph"
 	"github.com/ut-sama-art-studio/art-market-backend/middlewares"
-	filesService "github.com/ut-sama-art-studio/art-market-backend/services/files"
+	"github.com/ut-sama-art-studio/art-market-backend/services/fileservice"
 )
 
 // MultipleUpload is the resolver for the multipleUpload field.
@@ -20,7 +20,7 @@ func (r *mutationResolver) MultipleUpload(ctx context.Context, files []*graphql.
 	userID := middlewares.ContextUserID(ctx)
 
 	for _, file := range files {
-		fileURL, err := filesService.UploadFileToS3(*file, userID)
+		fileURL, err := fileservice.UploadFileToS3(*file, userID, "")
 		if err != nil {
 			return nil, fmt.Errorf("failed to upload file: %w", err)
 		}
@@ -34,7 +34,7 @@ func (r *mutationResolver) MultipleUpload(ctx context.Context, files []*graphql.
 func (r *mutationResolver) SingleUpload(ctx context.Context, file graphql.Upload) (string, error) {
 	userID := middlewares.ContextUserID(ctx)
 
-	fileURL, err := filesService.UploadFileToS3(file, userID)
+	fileURL, err := fileservice.UploadFileToS3(file, userID, "")
 	if err != nil {
 		return "", fmt.Errorf("failed to upload single file: %w", err)
 	}

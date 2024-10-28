@@ -25,6 +25,8 @@ extend type Mutation {
     updateUser(id: ID!, input: UpdateUser!): User! @auth
     deleteUser(id: ID!): Boolean! @auth
     refreshToken(input: RefreshTokenInput!): String!
+
+    updateProfilePicture(file: Upload!): User! @auth
 }
 
 extend type Query {

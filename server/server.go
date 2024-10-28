@@ -16,7 +16,7 @@ import (
 	"github.com/ut-sama-art-studio/art-market-backend/graph/directives"
 	"github.com/ut-sama-art-studio/art-market-backend/graph/resolvers"
 	"github.com/ut-sama-art-studio/art-market-backend/middlewares"
-	"github.com/ut-sama-art-studio/art-market-backend/services/files"
+	"github.com/ut-sama-art-studio/art-market-backend/services/fileservice"
 )
 
 type Config struct {
@@ -44,8 +44,7 @@ func (app *Application) Serve(router *chi.Mux) {
 	}))
 
 	// Initializing the S3 client
-	err := files.InitS3Client()
-	files.LogBucketObjects()
+	err := fileservice.InitS3Client()
 	if err != nil {
 		log.Fatalf("failed to initialize S3 client: %v", err)
 	}

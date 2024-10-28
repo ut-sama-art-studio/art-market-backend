@@ -10,8 +10,10 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/ut-sama-art-studio/art-market-backend/graph/model"
 	"github.com/ut-sama-art-studio/art-market-backend/middlewares"
+	"github.com/ut-sama-art-studio/art-market-backend/services/fileservice"
 	"github.com/ut-sama-art-studio/art-market-backend/services/users"
 )
 
@@ -71,6 +73,32 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, err
 // RefreshToken is the resolver for the refreshToken field.
 func (r *mutationResolver) RefreshToken(ctx context.Context, input model.RefreshTokenInput) (string, error) {
 	panic(fmt.Errorf("not implemented: RefreshToken - refreshToken"))
+}
+
+// UpdateProfilePicture is the resolver for the updateProfilePicture field.
+func (r *mutationResolver) UpdateProfilePicture(ctx context.Context, file graphql.Upload) (*model.User, error) {
+	userID := middlewares.ContextUserID(ctx)
+	user, err := users.GetUserByID(userID)
+	if err != nil {
+		log.Print("Error updating user: ", err)
+		return nil, err
+	}
+
+	folderPath := "profile-picture"
+	fileservice.EmptyUserFolder(userID, folderPath)
+	fileURL, err := fileservice.UploadFileToS3(file, userID, folderPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upload profile picture: %w", err)
+	}
+
+	// update user
+	user.ProfilePicture = &fileURL
+	if err = user.Update(); err != nil {
+		log.Print("Error updating user: ", err)
+		return nil, err
+	}
+
+	return &model.User{ID: user.ID, Name: user.Name, Email: user.Email, ProfilePicture: user.ProfilePicture, Bio: user.Bio}, nil
 }
 
 // Me is the resolver for the me field.
