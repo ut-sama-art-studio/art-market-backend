@@ -6,6 +6,7 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -16,9 +17,17 @@ import (
 
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input model.UpdateUser) (*model.User, error) {
+	ctxId := middlewares.ContextUserID(ctx)
+	if ctxId != id {
+		// TODO: allow admin
+		err := errors.New("No premission, can't update another user")
+		log.Print("Error updating user: ", err)
+		return nil, err
+	}
+
 	user, err := users.GetUserByID(id)
 	if err != nil {
-		log.Print("Error fetching user: ", err)
+		log.Print("Error updating user: ", err)
 		return nil, err
 	}
 	// update
@@ -43,6 +52,14 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input mode
 
 // DeleteUser is the resolver for the deleteUser field.
 func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, error) {
+	ctxId := middlewares.ContextUserID(ctx)
+	if ctxId != id {
+		// TODO: allow admin
+		err := errors.New("No premission, can't delete another user")
+		log.Print("Error updating user: ", err)
+		return false, err
+	}
+
 	if err := users.DeleteById(id); err != nil {
 		log.Print("Error deleting user: ", err)
 		return false, err
@@ -58,12 +75,14 @@ func (r *mutationResolver) RefreshToken(ctx context.Context, input model.Refresh
 
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
-	userId := middlewares.ContextUserID(ctx)
-	user, err := users.GetUserByID(userId)
+	id := middlewares.ContextUserID(ctx)
+
+	user, err := users.GetUserByID(id)
 	if err != nil {
-		log.Print("Error fetching user: ", err)
+		log.Print("Error fetching user in getUserByID: ", err)
 		return nil, err
 	}
+	// log.Printf("Found user: %s\n", user.Name)
 
 	return &model.User{
 		ID:             user.ID,
@@ -79,10 +98,19 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
 	user, err := users.GetUserByID(id)
 	if err != nil {
-		log.Print("Error fetching user: ", err)
+		log.Print("Error fetching user in getUserByID: ", err)
 		return nil, err
 	}
-	return &model.User{ID: user.ID, Name: user.Name, Username: &user.Username, Email: user.Email, ProfilePicture: user.ProfilePicture, Bio: user.Bio}, nil
+	// log.Printf("Found user: %s\n", user.Name)
+
+	return &model.User{
+		ID:             user.ID,
+		Name:           user.Name,
+		Username:       &user.Username,
+		Email:          user.Email,
+		ProfilePicture: user.ProfilePicture,
+		Bio:            user.Bio,
+	}, nil
 }
 
 // Users is the resolver for the users field.

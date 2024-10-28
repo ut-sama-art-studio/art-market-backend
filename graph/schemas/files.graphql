@@ -1,0 +1,7 @@
+"The `Upload` scalar type represents a multipart file upload."
+scalar Upload
+
+extend type Mutation {
+    multipleUpload(files: [Upload!]!): [String!]! @auth
+    singleUpload(file: Upload!): String! @auth
+}

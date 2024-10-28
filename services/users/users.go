@@ -2,18 +2,19 @@ package users
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 
 	"github.com/ut-sama-art-studio/art-market-backend/database"
 )
 
-// this User struct models database object, where as the one in model.user is a data transfer object
+// this User struct models database object, where as the one in model.user is a data transfer object encapsulating what user sends
 type User struct {
 	ID      string `json:"id"`
 	OauthID string `json:"oauth_id"`
 	Role    string `json:"role"`
 
-	Username       string  `json:"username,omitempty"`
+	Username       string  `json:"username"`
 	Name           string  `json:"name"` // display name
 	Email          *string `json:"email,omitempty"`
 	Password       *string `json:"password,omitempty"`
@@ -25,17 +26,9 @@ func (user User) Insert() (string, error) {
 	// SQL query to insert a new user into the User table
 	query := `
         INSERT INTO "User" (oauth_id, username, name, email, password, profile_picture, bio)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id
     `
-	// log.Printf("Inserting user: oauth_id=%s, name=%s, email=%s, password=%s, profile_picture=%s, bio=%s",
-	// 	user.OauthID,
-	// 	user.Name,
-	// 	user.Email,
-	// 	user.Password,
-	// 	user.ProfilePicture,
-	// 	user.Bio,
-	// )
 	var id string
 	// Execute the query and get the newly inserted user's ID
 	err := database.Db.QueryRow(query, user.OauthID, user.Username, user.Name, user.Email, user.Password, user.ProfilePicture, user.Bio).Scan(&id)
@@ -69,6 +62,10 @@ func GetUserByOauthID(oauthID string) (*User, error) {
 }
 
 func GetUserByID(id string) (*User, error) {
+	if id == "" {
+		return nil, errors.New("id not provided")
+	}
+
 	query := `
 		SELECT id, username, name, email, password, profile_picture, bio
 		FROM "User"
@@ -90,17 +87,30 @@ func GetUserByID(id string) (*User, error) {
 
 // updates the user based on the user object
 func (user *User) Update() error {
-	// Construct SQL query to update user information
 	query := `
 		UPDATE "User"
 		SET name = $1, email = $2, profile_picture = $3, bio = $4
 		WHERE id = $5
 	`
 
-	// Execute the query using the database connection
 	_, err := database.Db.Exec(query, user.Name, user.Email, user.ProfilePicture, user.Bio, user.ID)
 	if err != nil {
 		log.Print("Error updating user: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (user *User) UpdateUsername(username string) error {
+	query := `
+		UPDATE "User"
+		SET username = $1
+		WHERE id = $2
+	`
+	_, err := database.Db.Exec(query, username, user.ID)
+	if err != nil {
+		log.Print("Error updating user's username: ", err)
 		return err
 	}
 
@@ -142,7 +152,7 @@ func GetAllUsers() ([]User, error) {
 	var users []User
 	for rows.Next() {
 		var user User
-		err := rows.Scan(&user.ID, &user.Username, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.Bio)
+		err := rows.Scan(&user.ID, user.Username, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.Bio)
 		if err != nil {
 			log.Print("Error scanning row: ", err)
 			return nil, err

@@ -32,11 +32,7 @@ func (r *queryResolver) Merch(ctx context.Context, id string) (*model.MerchItem,
 	panic(fmt.Errorf("not implemented: Merch - merch"))
 }
 
-// Mutation returns graph.MutationResolver implementation.
-func (r *Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
-
 // Query returns graph.QueryResolver implementation.
 func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
 
-type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

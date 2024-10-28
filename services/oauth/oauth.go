@@ -3,6 +3,7 @@ package oauth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -49,45 +50,15 @@ func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract user details
-	discordID, ok := userInfo["id"].(string)
-	if !ok {
-		http.Error(w, "Invalid user info: ID not found", http.StatusInternalServerError)
-		return
-	}
-	oauthID := DiscordIdToOauthId(discordID)
-	username, ok := userInfo["username"].(string)
-	if !ok {
-		http.Error(w, "Invalid user info: Username not found", http.StatusInternalServerError)
-		return
-	}
-	email, _ := userInfo["email"].(string) // Email is optional
-
-	existingUser, err := users.GetUserByOauthID(oauthID)
+	user, err := getDiscordUser(userInfo)
 	if err != nil {
-		http.Error(w, "Failed to fetch user: "+err.Error(), http.StatusInternalServerError)
-		return
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	// If user does not exist, create a new one
-	if existingUser == nil {
-		newUser := users.User{
-			OauthID: oauthID,
-			Name:    username,
-			Email:   &email,
-		}
-		newUserID, err := newUser.Insert()
-		if err != nil {
-			http.Error(w, "Failed to create user: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		existingUser, err = users.GetUserByID(newUserID)
-		if err != nil {
-			http.Error(w, "Failed to fetch user: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
+	// update with latest username incase it was changed
+	username, _ := userInfo["username"].(string)
+	user.UpdateUsername(username)
 
-	jwtToken, err := jwt.GenerateToken(existingUser)
+	jwtToken, err := jwt.GenerateToken(user)
 	if err != nil {
 		http.Error(w, "Failed to create JWT: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -96,6 +67,42 @@ func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) {
 	// Redirect to the frontend with the token
 	redirectionUrl := FrontEndURL + "?token=" + jwtToken
 	http.Redirect(w, r, redirectionUrl, http.StatusSeeOther)
+}
+
+func getDiscordUser(userInfo map[string]interface{}) (*users.User, error) {
+	// Extract user details
+	discordID, ok := userInfo["id"].(string)
+	if !ok {
+		return nil, errors.New("invalid user info: ID not found")
+	}
+	oauthID := DiscordIdToOauthId(discordID)
+	username, _ := userInfo["username"].(string) // not unique across discord
+	email, _ := userInfo["email"].(string)       // Email is optional
+	name, _ := userInfo["global_name"].(string)
+
+	user, err := users.GetUserByOauthID(oauthID)
+	if err != nil {
+		return nil, errors.New("failed to fetch user: " + err.Error())
+	}
+
+	// If user does not exist, create a new one
+	if user == nil {
+		newUser := users.User{
+			OauthID:  oauthID,
+			Username: username,
+			Email:    &email,
+			Name:     name,
+		}
+		newUserID, err := newUser.Insert()
+		if err != nil {
+			return nil, errors.New("failed to create user: " + err.Error())
+		}
+		user, err = users.GetUserByID(newUserID)
+		if err != nil {
+			return nil, errors.New("failed to fetch user: " + err.Error())
+		}
+	}
+	return user, nil
 }
 
 func DiscordIdToOauthId(id string) string {

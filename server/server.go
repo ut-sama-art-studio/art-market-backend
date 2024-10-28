@@ -16,6 +16,7 @@ import (
 	"github.com/ut-sama-art-studio/art-market-backend/graph/directives"
 	"github.com/ut-sama-art-studio/art-market-backend/graph/resolvers"
 	"github.com/ut-sama-art-studio/art-market-backend/middlewares"
+	"github.com/ut-sama-art-studio/art-market-backend/services/files"
 )
 
 type Config struct {
@@ -29,7 +30,25 @@ type Application struct {
 
 func (app *Application) Serve(router *chi.Mux) {
 	apiRouter := chi.NewRouter()
+	// middlewares
 	apiRouter.Use(middlewares.AuthMiddleware)
+	apiRouter.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{os.Getenv("FRONT_END_URL_LOCALHOST"), os.Getenv("FRONT_END_URL")},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+
+		// Debug: os.Getenv("ENV") == "development",
+	}))
+
+	// Initializing the S3 client
+	err := files.InitS3Client()
+	files.LogBucketObjects()
+	if err != nil {
+		log.Fatalf("failed to initialize S3 client: %v", err)
+	}
 
 	router.Mount(app.Config.ApiPrefix, apiRouter)
 	app.AddAPIRoutes(apiRouter)
@@ -60,15 +79,6 @@ func main() {
 
 	cfg := Config{Port: port, ApiPrefix: "/api"}
 	router := chi.NewRouter()
-	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{os.Getenv("FRONT_END_URL_LOCALHOST"), os.Getenv("FRONT_END_URL")},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300,
-		// Debug:            os.Getenv("ENV") == "development",
-	}))
 
 	dbString := os.Getenv("DBSTRING")
 
