@@ -55,8 +55,10 @@ type ComplexityRoot struct {
 		Images      func(childComplexity int) int
 		Inventory   func(childComplexity int) int
 		Name        func(childComplexity int) int
+		OwnerID     func(childComplexity int) int
 		Price       func(childComplexity int) int
 		Type        func(childComplexity int) int
+		Unit        func(childComplexity int) int
 		Width       func(childComplexity int) int
 	}
 
@@ -73,10 +75,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Me    func(childComplexity int) int
-		Merch func(childComplexity int, id string) int
-		User  func(childComplexity int, id string) int
-		Users func(childComplexity int) int
+		Me             func(childComplexity int) int
+		User           func(childComplexity int, id string) int
+		UserMerchItems func(childComplexity int, userID string) int
+		Users          func(childComplexity int) int
 	}
 
 	User struct {
@@ -102,7 +104,7 @@ type MutationResolver interface {
 	UpdateProfilePicture(ctx context.Context, file graphql.Upload) (*model.User, error)
 }
 type QueryResolver interface {
-	Merch(ctx context.Context, id string) (*model.MerchItem, error)
+	UserMerchItems(ctx context.Context, userID string) ([]*model.MerchItem, error)
 	Me(ctx context.Context) (*model.User, error)
 	User(ctx context.Context, id string) (*model.User, error)
 	Users(ctx context.Context) ([]*model.User, error)
@@ -169,6 +171,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MerchItem.Name(childComplexity), true
 
+	case "MerchItem.ownerId":
+		if e.complexity.MerchItem.OwnerID == nil {
+			break
+		}
+
+		return e.complexity.MerchItem.OwnerID(childComplexity), true
+
 	case "MerchItem.price":
 		if e.complexity.MerchItem.Price == nil {
 			break
@@ -182,6 +191,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MerchItem.Type(childComplexity), true
+
+	case "MerchItem.unit":
+		if e.complexity.MerchItem.Unit == nil {
+			break
+		}
+
+		return e.complexity.MerchItem.Unit(childComplexity), true
 
 	case "MerchItem.width":
 		if e.complexity.MerchItem.Width == nil {
@@ -305,18 +321,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Me(childComplexity), true
 
-	case "Query.merch":
-		if e.complexity.Query.Merch == nil {
-			break
-		}
-
-		args, err := ec.field_Query_merch_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Merch(childComplexity, args["id"].(string)), true
-
 	case "Query.user":
 		if e.complexity.Query.User == nil {
 			break
@@ -328,6 +332,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.User(childComplexity, args["id"].(string)), true
+
+	case "Query.userMerchItems":
+		if e.complexity.Query.UserMerchItems == nil {
+			break
+		}
+
+		args, err := ec.field_Query_userMerchItems_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UserMerchItems(childComplexity, args["userId"].(string)), true
 
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
@@ -674,18 +690,18 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_merch_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_userMerchItems_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["userId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id"] = arg0
+	args["userId"] = arg0
 	return args, nil
 }
 
@@ -786,6 +802,50 @@ func (ec *executionContext) fieldContext_MerchItem_id(_ context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _MerchItem_ownerId(ctx context.Context, field graphql.CollectedField, obj *model.MerchItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MerchItem_ownerId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OwnerID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MerchItem_ownerId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MerchItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MerchItem_name(ctx context.Context, field graphql.CollectedField, obj *model.MerchItem) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MerchItem_name(ctx, field)
 	if err != nil {
@@ -830,47 +890,6 @@ func (ec *executionContext) fieldContext_MerchItem_name(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _MerchItem_type(ctx context.Context, field graphql.CollectedField, obj *model.MerchItem) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MerchItem_type(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Type, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MerchItem_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MerchItem",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _MerchItem_description(ctx context.Context, field graphql.CollectedField, obj *model.MerchItem) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MerchItem_description(ctx, field)
 	if err != nil {
@@ -900,50 +919,6 @@ func (ec *executionContext) _MerchItem_description(ctx context.Context, field gr
 }
 
 func (ec *executionContext) fieldContext_MerchItem_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MerchItem",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MerchItem_images(ctx context.Context, field graphql.CollectedField, obj *model.MerchItem) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MerchItem_images(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Images, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*string)
-	fc.Result = res
-	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MerchItem_images(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MerchItem",
 		Field:      field,
@@ -1041,6 +1016,50 @@ func (ec *executionContext) fieldContext_MerchItem_inventory(_ context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _MerchItem_type(ctx context.Context, field graphql.CollectedField, obj *model.MerchItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MerchItem_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MerchItem_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MerchItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MerchItem_width(ctx context.Context, field graphql.CollectedField, obj *model.MerchItem) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MerchItem_width(ctx, field)
 	if err != nil {
@@ -1118,6 +1137,91 @@ func (ec *executionContext) fieldContext_MerchItem_height(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MerchItem_unit(ctx context.Context, field graphql.CollectedField, obj *model.MerchItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MerchItem_unit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Unit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MerchItem_unit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MerchItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MerchItem_images(ctx context.Context, field graphql.CollectedField, obj *model.MerchItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MerchItem_images(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Images, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MerchItem_images(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MerchItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1286,8 +1390,28 @@ func (ec *executionContext) _Mutation_createMerch(ctx context.Context, field gra
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateMerch(rctx, fc.Args["input"].(model.NewMerch))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateMerch(rctx, fc.Args["input"].(model.NewMerch))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.MerchItem); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ut-sama-art-studio/art-market-backend/graph/model.MerchItem`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1314,22 +1438,26 @@ func (ec *executionContext) fieldContext_Mutation_createMerch(ctx context.Contex
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_MerchItem_id(ctx, field)
+			case "ownerId":
+				return ec.fieldContext_MerchItem_ownerId(ctx, field)
 			case "name":
 				return ec.fieldContext_MerchItem_name(ctx, field)
-			case "type":
-				return ec.fieldContext_MerchItem_type(ctx, field)
 			case "description":
 				return ec.fieldContext_MerchItem_description(ctx, field)
-			case "images":
-				return ec.fieldContext_MerchItem_images(ctx, field)
 			case "price":
 				return ec.fieldContext_MerchItem_price(ctx, field)
 			case "inventory":
 				return ec.fieldContext_MerchItem_inventory(ctx, field)
+			case "type":
+				return ec.fieldContext_MerchItem_type(ctx, field)
 			case "width":
 				return ec.fieldContext_MerchItem_width(ctx, field)
 			case "height":
 				return ec.fieldContext_MerchItem_height(ctx, field)
+			case "unit":
+				return ec.fieldContext_MerchItem_unit(ctx, field)
+			case "images":
+				return ec.fieldContext_MerchItem_images(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MerchItem", field.Name)
 		},
@@ -1361,8 +1489,28 @@ func (ec *executionContext) _Mutation_updateMerch(ctx context.Context, field gra
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateMerch(rctx, fc.Args["input"].(model.UpdateMerch))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateMerch(rctx, fc.Args["input"].(model.UpdateMerch))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.MerchItem); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ut-sama-art-studio/art-market-backend/graph/model.MerchItem`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1389,22 +1537,26 @@ func (ec *executionContext) fieldContext_Mutation_updateMerch(ctx context.Contex
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_MerchItem_id(ctx, field)
+			case "ownerId":
+				return ec.fieldContext_MerchItem_ownerId(ctx, field)
 			case "name":
 				return ec.fieldContext_MerchItem_name(ctx, field)
-			case "type":
-				return ec.fieldContext_MerchItem_type(ctx, field)
 			case "description":
 				return ec.fieldContext_MerchItem_description(ctx, field)
-			case "images":
-				return ec.fieldContext_MerchItem_images(ctx, field)
 			case "price":
 				return ec.fieldContext_MerchItem_price(ctx, field)
 			case "inventory":
 				return ec.fieldContext_MerchItem_inventory(ctx, field)
+			case "type":
+				return ec.fieldContext_MerchItem_type(ctx, field)
 			case "width":
 				return ec.fieldContext_MerchItem_width(ctx, field)
 			case "height":
 				return ec.fieldContext_MerchItem_height(ctx, field)
+			case "unit":
+				return ec.fieldContext_MerchItem_unit(ctx, field)
+			case "images":
+				return ec.fieldContext_MerchItem_images(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MerchItem", field.Name)
 		},
@@ -1436,8 +1588,28 @@ func (ec *executionContext) _Mutation_deleteMerch(ctx context.Context, field gra
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteMerch(rctx, fc.Args["id"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteMerch(rctx, fc.Args["id"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1790,8 +1962,8 @@ func (ec *executionContext) fieldContext_Mutation_updateProfilePicture(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_merch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_merch(ctx, field)
+func (ec *executionContext) _Query_userMerchItems(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_userMerchItems(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1803,8 +1975,28 @@ func (ec *executionContext) _Query_merch(ctx context.Context, field graphql.Coll
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Merch(rctx, fc.Args["id"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().UserMerchItems(rctx, fc.Args["userId"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.MerchItem); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/ut-sama-art-studio/art-market-backend/graph/model.MerchItem`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1816,12 +2008,12 @@ func (ec *executionContext) _Query_merch(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.MerchItem)
+	res := resTmp.([]*model.MerchItem)
 	fc.Result = res
-	return ec.marshalNMerchItem2ᚖgithubᚗcomᚋutᚑsamaᚑartᚑstudioᚋartᚑmarketᚑbackendᚋgraphᚋmodelᚐMerchItem(ctx, field.Selections, res)
+	return ec.marshalNMerchItem2ᚕᚖgithubᚗcomᚋutᚑsamaᚑartᚑstudioᚋartᚑmarketᚑbackendᚋgraphᚋmodelᚐMerchItem(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_merch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_userMerchItems(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1831,22 +2023,26 @@ func (ec *executionContext) fieldContext_Query_merch(ctx context.Context, field 
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_MerchItem_id(ctx, field)
+			case "ownerId":
+				return ec.fieldContext_MerchItem_ownerId(ctx, field)
 			case "name":
 				return ec.fieldContext_MerchItem_name(ctx, field)
-			case "type":
-				return ec.fieldContext_MerchItem_type(ctx, field)
 			case "description":
 				return ec.fieldContext_MerchItem_description(ctx, field)
-			case "images":
-				return ec.fieldContext_MerchItem_images(ctx, field)
 			case "price":
 				return ec.fieldContext_MerchItem_price(ctx, field)
 			case "inventory":
 				return ec.fieldContext_MerchItem_inventory(ctx, field)
+			case "type":
+				return ec.fieldContext_MerchItem_type(ctx, field)
 			case "width":
 				return ec.fieldContext_MerchItem_width(ctx, field)
 			case "height":
 				return ec.fieldContext_MerchItem_height(ctx, field)
+			case "unit":
+				return ec.fieldContext_MerchItem_unit(ctx, field)
+			case "images":
+				return ec.fieldContext_MerchItem_images(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MerchItem", field.Name)
 		},
@@ -1858,7 +2054,7 @@ func (ec *executionContext) fieldContext_Query_merch(ctx context.Context, field 
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_merch_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_userMerchItems_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4258,7 +4454,7 @@ func (ec *executionContext) unmarshalInputNewMerch(ctx context.Context, obj inte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "type", "description", "images", "price", "inventory", "width", "height"}
+	fieldsInOrder := [...]string{"name", "description", "price", "inventory", "type", "width", "height", "unit", "images"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4272,13 +4468,6 @@ func (ec *executionContext) unmarshalInputNewMerch(ctx context.Context, obj inte
 				return it, err
 			}
 			it.Name = data
-		case "type":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Type = data
 		case "description":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -4286,13 +4475,6 @@ func (ec *executionContext) unmarshalInputNewMerch(ctx context.Context, obj inte
 				return it, err
 			}
 			it.Description = data
-		case "images":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("images"))
-			data, err := ec.unmarshalNString2ᚕᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Images = data
 		case "price":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("price"))
 			data, err := ec.unmarshalNFloat2float64(ctx, v)
@@ -4307,6 +4489,13 @@ func (ec *executionContext) unmarshalInputNewMerch(ctx context.Context, obj inte
 				return it, err
 			}
 			it.Inventory = data
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
 		case "width":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("width"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
@@ -4321,6 +4510,20 @@ func (ec *executionContext) unmarshalInputNewMerch(ctx context.Context, obj inte
 				return it, err
 			}
 			it.Height = data
+		case "unit":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("unit"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Unit = data
+		case "images":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("images"))
+			data, err := ec.unmarshalNUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Images = data
 		}
 	}
 
@@ -4361,7 +4564,7 @@ func (ec *executionContext) unmarshalInputUpdateMerch(ctx context.Context, obj i
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "name", "type", "description", "images", "price", "inventory", "width", "height"}
+	fieldsInOrder := [...]string{"id", "name", "description", "price", "inventory", "type", "width", "height", "unit", "reorderedImage", "imagesToDelete", "newImages"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4382,13 +4585,6 @@ func (ec *executionContext) unmarshalInputUpdateMerch(ctx context.Context, obj i
 				return it, err
 			}
 			it.Name = data
-		case "type":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Type = data
 		case "description":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -4396,13 +4592,6 @@ func (ec *executionContext) unmarshalInputUpdateMerch(ctx context.Context, obj i
 				return it, err
 			}
 			it.Description = data
-		case "images":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("images"))
-			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Images = data
 		case "price":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("price"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
@@ -4417,6 +4606,13 @@ func (ec *executionContext) unmarshalInputUpdateMerch(ctx context.Context, obj i
 				return it, err
 			}
 			it.Inventory = data
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
 		case "width":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("width"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
@@ -4431,6 +4627,34 @@ func (ec *executionContext) unmarshalInputUpdateMerch(ctx context.Context, obj i
 				return it, err
 			}
 			it.Height = data
+		case "unit":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("unit"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Unit = data
+		case "reorderedImage":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reorderedImage"))
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReorderedImage = data
+		case "imagesToDelete":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imagesToDelete"))
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ImagesToDelete = data
+		case "newImages":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newImages"))
+			data, err := ec.unmarshalOUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NewImages = data
 		}
 	}
 
@@ -4509,20 +4733,18 @@ func (ec *executionContext) _MerchItem(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "ownerId":
+			out.Values[i] = ec._MerchItem_ownerId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "name":
 			out.Values[i] = ec._MerchItem_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "type":
-			out.Values[i] = ec._MerchItem_type(ctx, field, obj)
 		case "description":
 			out.Values[i] = ec._MerchItem_description(ctx, field, obj)
-		case "images":
-			out.Values[i] = ec._MerchItem_images(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "price":
 			out.Values[i] = ec._MerchItem_price(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -4530,10 +4752,22 @@ func (ec *executionContext) _MerchItem(ctx context.Context, sel ast.SelectionSet
 			}
 		case "inventory":
 			out.Values[i] = ec._MerchItem_inventory(ctx, field, obj)
+		case "type":
+			out.Values[i] = ec._MerchItem_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "width":
 			out.Values[i] = ec._MerchItem_width(ctx, field, obj)
 		case "height":
 			out.Values[i] = ec._MerchItem_height(ctx, field, obj)
+		case "unit":
+			out.Values[i] = ec._MerchItem_unit(ctx, field, obj)
+		case "images":
+			out.Values[i] = ec._MerchItem_images(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4681,7 +4915,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "merch":
+		case "userMerchItems":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -4690,7 +4924,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_merch(ctx, field)
+				res = ec._Query_userMerchItems(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -5227,6 +5461,44 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 
 func (ec *executionContext) marshalNMerchItem2githubᚗcomᚋutᚑsamaᚑartᚑstudioᚋartᚑmarketᚑbackendᚋgraphᚋmodelᚐMerchItem(ctx context.Context, sel ast.SelectionSet, v model.MerchItem) graphql.Marshaler {
 	return ec._MerchItem(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMerchItem2ᚕᚖgithubᚗcomᚋutᚑsamaᚑartᚑstudioᚋartᚑmarketᚑbackendᚋgraphᚋmodelᚐMerchItem(ctx context.Context, sel ast.SelectionSet, v []*model.MerchItem) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOMerchItem2ᚖgithubᚗcomᚋutᚑsamaᚑartᚑstudioᚋartᚑmarketᚑbackendᚋgraphᚋmodelᚐMerchItem(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
 }
 
 func (ec *executionContext) marshalNMerchItem2ᚖgithubᚗcomᚋutᚑsamaᚑartᚑstudioᚋartᚑmarketᚑbackendᚋgraphᚋmodelᚐMerchItem(ctx context.Context, sel ast.SelectionSet, v *model.MerchItem) graphql.Marshaler {
@@ -5769,6 +6041,13 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
+func (ec *executionContext) marshalOMerchItem2ᚖgithubᚗcomᚋutᚑsamaᚑartᚑstudioᚋartᚑmarketᚑbackendᚋgraphᚋmodelᚐMerchItem(ctx context.Context, sel ast.SelectionSet, v *model.MerchItem) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MerchItem(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
 	if v == nil {
 		return nil, nil
@@ -5815,6 +6094,44 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	}
 	res := graphql.MarshalString(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx context.Context, v interface{}) ([]*graphql.Upload, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*graphql.Upload, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx context.Context, sel ast.SelectionSet, v []*graphql.Upload) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

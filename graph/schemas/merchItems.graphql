@@ -1,44 +1,51 @@
 type MerchItem {
     id: ID!
+    ownerId: ID!
     name: String!
-    type: String
     description: String
-    images: [String]!
     price: Float!
     inventory: Int
+    type: String!
     width: Float
     height: Float
+    unit: String
+    images: [String]!
 }
 
 input NewMerch {
     name: String!
-    type: String
     description: String
-    images: [String]!
     price: Float!
     inventory: Int
+    type: String!
     width: Float
     height: Float
+    unit: String
+    images: [Upload!]!
 }
 
 input UpdateMerch {
     id: ID!
     name: String
-    type: String
     description: String
-    images: [String]
     price: Float
     inventory: Int
+    type: String
     width: Float
     height: Float
+    unit: String
+    reorderedImage: [String]
+    imagesToDelete: [String]
+    newImages: [Upload!]
 }
 
 extend type Mutation {
-    createMerch(input: NewMerch!): MerchItem!
-    updateMerch(input: UpdateMerch!): MerchItem!
-    deleteMerch(id: ID!): Boolean!
+    createMerch(input: NewMerch!): MerchItem! @auth
+    updateMerch(input: UpdateMerch!): MerchItem! @auth
+    deleteMerch(id: ID!): Boolean! @auth
 }
 
 extend type Query {
-    merch(id: ID!): MerchItem!
+    # merch(id: ID!): MerchItem!
+    userMerchItems(userId: ID!): [MerchItem]! @auth
 }

@@ -7,14 +7,53 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"log"
 
+	"github.com/google/uuid"
 	"github.com/ut-sama-art-studio/art-market-backend/graph"
 	"github.com/ut-sama-art-studio/art-market-backend/graph/model"
+	"github.com/ut-sama-art-studio/art-market-backend/middlewares"
+	"github.com/ut-sama-art-studio/art-market-backend/services/fileservice"
+	merchitems "github.com/ut-sama-art-studio/art-market-backend/services/merchItems"
 )
 
 // CreateMerch is the resolver for the createMerch field.
 func (r *mutationResolver) CreateMerch(ctx context.Context, input model.NewMerch) (*model.MerchItem, error) {
-	panic(fmt.Errorf("not implemented: CreateMerch - createMerch"))
+	ownerId := middlewares.ContextUserID(ctx)
+
+	merchId := uuid.New().String()
+	folderPath := merchId // store images under merchId
+	// Process uploaded images and obtain URLs
+	imageURLs := make([]*string, 5) // init with nils
+	for i, file := range input.Images {
+		// Upload the file and get the URL
+		url, err := fileservice.UploadFileToS3(*file, ownerId, folderPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to upload file: %w", err)
+		}
+		imageURLs[i] = &url
+	}
+
+	merch := merchitems.MerchItem{
+		ID:          merchId,
+		OwnerID:     ownerId,
+		Name:        input.Name,
+		Description: input.Description,
+		Price:       input.Price,
+		Inventory:   input.Inventory,
+		Type:        input.Type,
+		Height:      input.Height,
+		Width:       input.Width,
+		Unit:        input.Unit,
+		ImageURLs:   imageURLs,
+	}
+
+	_, err := merch.Create()
+	if err != nil {
+		fileservice.DeleteUserFolder(ownerId, folderPath)
+		return nil, fmt.Errorf("could not create merch item: %w", err)
+	}
+	return merch.ToGraphqlMerchItem(), nil
 }
 
 // UpdateMerch is the resolver for the updateMerch field.
@@ -27,12 +66,50 @@ func (r *mutationResolver) DeleteMerch(ctx context.Context, id string) (bool, er
 	panic(fmt.Errorf("not implemented: DeleteMerch - deleteMerch"))
 }
 
-// Merch is the resolver for the merch field.
-func (r *queryResolver) Merch(ctx context.Context, id string) (*model.MerchItem, error) {
-	panic(fmt.Errorf("not implemented: Merch - merch"))
+// UserMerchItems is the resolver for the userMerchItems field.
+func (r *queryResolver) UserMerchItems(ctx context.Context, userID string) ([]*model.MerchItem, error) {
+	// Fetch the user's merchandise items from the database
+	items, err := merchitems.GetByOwnerID(userID)
+	if err != nil {
+		log.Printf("Error fetching merch items for user %s: %v", userID, err)
+		return nil, fmt.Errorf("could not retrieve merch items: %w", err)
+	}
+
+	// Convert database objects to GraphQL model objects
+	var merchItems []*model.MerchItem
+	for _, item := range items {
+		merchItems = append(merchItems, item.ToGraphqlMerchItem())
+	}
+
+	return merchItems, nil
 }
 
 // Query returns graph.QueryResolver implementation.
 func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
 
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *queryResolver) MyMerchItems(ctx context.Context) ([]*model.MerchItem, error) {
+	ownerID := middlewares.ContextUserID(ctx)
+
+	// Fetch the user's merchandise items from the database
+	items, err := merchitems.GetByOwnerID(ownerID)
+	if err != nil {
+		log.Printf("Error fetching merch items for user %s: %v", ownerID, err)
+		return nil, fmt.Errorf("could not retrieve merch items: %w", err)
+	}
+
+	// Convert database objects to GraphQL model objects
+	var merchItems []*model.MerchItem
+	for _, item := range items {
+		merchItems = append(merchItems, item.ToGraphqlMerchItem())
+	}
+
+	return merchItems, nil
+}

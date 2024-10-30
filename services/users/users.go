@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/ut-sama-art-studio/art-market-backend/database"
+	"github.com/ut-sama-art-studio/art-market-backend/graph/model"
 )
 
 // this User struct models database object, where as the one in model.user is a data transfer object encapsulating what user sends
@@ -20,6 +21,19 @@ type User struct {
 	Password       *string `json:"password,omitempty"`
 	ProfilePicture *string `json:"profile_picture,omitempty"`
 	Bio            *string `json:"bio,omitempty"`
+}
+
+// Converts database user to graphql model user
+func (user User) ToGraphUser() *model.User {
+	return &model.User{
+		ID:             user.ID,
+		Name:           user.Name,
+		Username:       &user.Username,
+		Email:          user.Email,
+		ProfilePicture: user.ProfilePicture,
+		Bio:            user.Bio,
+		Role:           &user.Role,
+	}
 }
 
 func (user User) Insert() (string, error) {

@@ -2,30 +2,37 @@
 
 package model
 
+import (
+	"github.com/99designs/gqlgen/graphql"
+)
+
 type MerchItem struct {
 	ID          string    `json:"id"`
+	OwnerID     string    `json:"ownerId"`
 	Name        string    `json:"name"`
-	Type        *string   `json:"type,omitempty"`
 	Description *string   `json:"description,omitempty"`
-	Images      []*string `json:"images"`
 	Price       float64   `json:"price"`
 	Inventory   *int      `json:"inventory,omitempty"`
+	Type        string    `json:"type"`
 	Width       *float64  `json:"width,omitempty"`
 	Height      *float64  `json:"height,omitempty"`
+	Unit        *string   `json:"unit,omitempty"`
+	Images      []*string `json:"images"`
 }
 
 type Mutation struct {
 }
 
 type NewMerch struct {
-	Name        string    `json:"name"`
-	Type        *string   `json:"type,omitempty"`
-	Description *string   `json:"description,omitempty"`
-	Images      []*string `json:"images"`
-	Price       float64   `json:"price"`
-	Inventory   *int      `json:"inventory,omitempty"`
-	Width       *float64  `json:"width,omitempty"`
-	Height      *float64  `json:"height,omitempty"`
+	Name        string            `json:"name"`
+	Description *string           `json:"description,omitempty"`
+	Price       float64           `json:"price"`
+	Inventory   *int              `json:"inventory,omitempty"`
+	Type        string            `json:"type"`
+	Width       *float64          `json:"width,omitempty"`
+	Height      *float64          `json:"height,omitempty"`
+	Unit        *string           `json:"unit,omitempty"`
+	Images      []*graphql.Upload `json:"images"`
 }
 
 type Query struct {
@@ -36,15 +43,18 @@ type RefreshTokenInput struct {
 }
 
 type UpdateMerch struct {
-	ID          string    `json:"id"`
-	Name        *string   `json:"name,omitempty"`
-	Type        *string   `json:"type,omitempty"`
-	Description *string   `json:"description,omitempty"`
-	Images      []*string `json:"images,omitempty"`
-	Price       *float64  `json:"price,omitempty"`
-	Inventory   *int      `json:"inventory,omitempty"`
-	Width       *float64  `json:"width,omitempty"`
-	Height      *float64  `json:"height,omitempty"`
+	ID             string            `json:"id"`
+	Name           *string           `json:"name,omitempty"`
+	Description    *string           `json:"description,omitempty"`
+	Price          *float64          `json:"price,omitempty"`
+	Inventory      *int              `json:"inventory,omitempty"`
+	Type           *string           `json:"type,omitempty"`
+	Width          *float64          `json:"width,omitempty"`
+	Height         *float64          `json:"height,omitempty"`
+	Unit           *string           `json:"unit,omitempty"`
+	ReorderedImage []*string         `json:"reorderedImage,omitempty"`
+	ImagesToDelete []*string         `json:"imagesToDelete,omitempty"`
+	NewImages      []*graphql.Upload `json:"newImages,omitempty"`
 }
 
 type UpdateUser struct {

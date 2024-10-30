@@ -49,7 +49,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input mode
 		log.Print("Error updating user: ", err)
 		return nil, err
 	}
-	return &model.User{ID: user.ID, Name: user.Name, Email: user.Email, ProfilePicture: user.ProfilePicture, Bio: user.Bio}, nil
+	return user.ToGraphUser(), nil
 }
 
 // DeleteUser is the resolver for the deleteUser field.
@@ -57,7 +57,7 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, err
 	ctxId := middlewares.ContextUserID(ctx)
 	if ctxId != id {
 		// TODO: allow admin
-		err := errors.New("No premission, can't delete another user")
+		err := errors.New("no premission, can't delete another user")
 		log.Print("Error updating user: ", err)
 		return false, err
 	}
@@ -84,8 +84,9 @@ func (r *mutationResolver) UpdateProfilePicture(ctx context.Context, file graphq
 		return nil, err
 	}
 
+	// It's possible to just name the image with the same name to replace it, but it will cause next.js cached image to not update if it's the same URL
 	folderPath := "profile-picture"
-	fileservice.EmptyUserFolder(userID, folderPath)
+	fileservice.DeleteUserFolder(userID, folderPath)
 	fileURL, err := fileservice.UploadFileToS3(file, userID, folderPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to upload profile picture: %w", err)
@@ -98,7 +99,7 @@ func (r *mutationResolver) UpdateProfilePicture(ctx context.Context, file graphq
 		return nil, err
 	}
 
-	return &model.User{ID: user.ID, Name: user.Name, Email: user.Email, ProfilePicture: user.ProfilePicture, Bio: user.Bio}, nil
+	return user.ToGraphUser(), nil
 }
 
 // Me is the resolver for the me field.
@@ -112,14 +113,7 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	}
 	// log.Printf("Found user: %s\n", user.Name)
 
-	return &model.User{
-		ID:             user.ID,
-		Name:           user.Name,
-		Username:       &user.Username,
-		Email:          user.Email,
-		ProfilePicture: user.ProfilePicture,
-		Bio:            user.Bio,
-	}, nil
+	return user.ToGraphUser(), nil
 }
 
 // User is the resolver for the user field.
@@ -131,14 +125,7 @@ func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error
 	}
 	// log.Printf("Found user: %s\n", user.Name)
 
-	return &model.User{
-		ID:             user.ID,
-		Name:           user.Name,
-		Username:       &user.Username,
-		Email:          user.Email,
-		ProfilePicture: user.ProfilePicture,
-		Bio:            user.Bio,
-	}, nil
+	return user.ToGraphUser(), nil
 }
 
 // Users is the resolver for the users field.
