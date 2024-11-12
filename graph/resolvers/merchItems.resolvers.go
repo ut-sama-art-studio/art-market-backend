@@ -14,7 +14,7 @@ import (
 	"github.com/ut-sama-art-studio/art-market-backend/graph/model"
 	"github.com/ut-sama-art-studio/art-market-backend/middlewares"
 	"github.com/ut-sama-art-studio/art-market-backend/services/fileservice"
-	merchitems "github.com/ut-sama-art-studio/art-market-backend/services/merchItems"
+	merchitems "github.com/ut-sama-art-studio/art-market-backend/services/merchservice"
 )
 
 // CreateMerch is the resolver for the createMerch field.
@@ -63,7 +63,32 @@ func (r *mutationResolver) UpdateMerch(ctx context.Context, input model.UpdateMe
 
 // DeleteMerch is the resolver for the deleteMerch field.
 func (r *mutationResolver) DeleteMerch(ctx context.Context, id string) (bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteMerch - deleteMerch"))
+	// Fetch the merchandise item from the database
+	merch, err := merchitems.GetByID(id)
+	if err != nil {
+		log.Printf("Error fetching merch item %s: %v", id, err)
+		return false, fmt.Errorf("could not find merch item: %w", err)
+	}
+
+	ownerId := middlewares.ContextUserID(ctx)
+	if ownerId != merch.OwnerID {
+		log.Printf("No permission to delete this merch: user %s does not own merch %s\n", ownerId, id)
+		return false, fmt.Errorf("no permission to delete this merch: %w", err)
+	}
+
+	// Delete the merchandise item from the database
+	err = merchitems.DeleteByID(merch.ID)
+	if err != nil {
+		log.Printf("Error deleting merch item %s: %v\n", id, err)
+		return false, fmt.Errorf("could not delete merch item: %w", err)
+	}
+
+	// Delete the associated images from S3
+	err = fileservice.DeleteUserFolder(merch.OwnerID, merch.ID)
+	if err != nil {
+		log.Printf("Error deleting images for merch\n")
+	}
+	return true, nil
 }
 
 // UserMerchItems is the resolver for the userMerchItems field.
@@ -88,28 +113,3 @@ func (r *queryResolver) UserMerchItems(ctx context.Context, userID string) ([]*m
 func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
 
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *queryResolver) MyMerchItems(ctx context.Context) ([]*model.MerchItem, error) {
-	ownerID := middlewares.ContextUserID(ctx)
-
-	// Fetch the user's merchandise items from the database
-	items, err := merchitems.GetByOwnerID(ownerID)
-	if err != nil {
-		log.Printf("Error fetching merch items for user %s: %v", ownerID, err)
-		return nil, fmt.Errorf("could not retrieve merch items: %w", err)
-	}
-
-	// Convert database objects to GraphQL model objects
-	var merchItems []*model.MerchItem
-	for _, item := range items {
-		merchItems = append(merchItems, item.ToGraphqlMerchItem())
-	}
-
-	return merchItems, nil
-}

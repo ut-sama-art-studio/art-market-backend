@@ -47,5 +47,5 @@ extend type Mutation {
 
 extend type Query {
     # merch(id: ID!): MerchItem!
-    userMerchItems(userId: ID!): [MerchItem]! @auth
+    userMerchItems(userId: ID!): [MerchItem]!
 }

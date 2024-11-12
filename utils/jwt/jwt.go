@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/ut-sama-art-studio/art-market-backend/services/users"
+	"github.com/ut-sama-art-studio/art-market-backend/services/userservice"
 )
 
 var jwtSecret = []byte(getSecretKey())
@@ -20,7 +20,7 @@ func getSecretKey() string {
 }
 
 // Generates a JWT string the user's ID for the given user
-func GenerateToken(user *users.User) (string, error) {
+func GenerateToken(user *userservice.User) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["user_id"] = user.ID
 	claims["exp"] = time.Now().AddDate(0, 8, 0).Unix() // Token valid for 8 months

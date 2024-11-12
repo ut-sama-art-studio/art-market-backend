@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ut-sama-art-studio/art-market-backend/services/users"
+	"github.com/ut-sama-art-studio/art-market-backend/services/userservice"
 	"github.com/ut-sama-art-studio/art-market-backend/utils/jwt"
 	"golang.org/x/oauth2"
 )
@@ -69,7 +69,7 @@ func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, redirectionUrl, http.StatusSeeOther)
 }
 
-func getDiscordUser(userInfo map[string]interface{}) (*users.User, error) {
+func getDiscordUser(userInfo map[string]interface{}) (*userservice.User, error) {
 	// Extract user details
 	discordID, ok := userInfo["id"].(string)
 	if !ok {
@@ -80,14 +80,14 @@ func getDiscordUser(userInfo map[string]interface{}) (*users.User, error) {
 	email, _ := userInfo["email"].(string)       // Email is optional
 	name, _ := userInfo["global_name"].(string)
 
-	user, err := users.GetUserByOauthID(oauthID)
+	user, err := userservice.GetUserByOauthID(oauthID)
 	if err != nil {
 		return nil, errors.New("failed to fetch user: " + err.Error())
 	}
 
 	// If user does not exist, create a new one
 	if user == nil {
-		newUser := users.User{
+		newUser := userservice.User{
 			OauthID:  oauthID,
 			Username: username,
 			Email:    &email,
@@ -97,7 +97,7 @@ func getDiscordUser(userInfo map[string]interface{}) (*users.User, error) {
 		if err != nil {
 			return nil, errors.New("failed to create user: " + err.Error())
 		}
-		user, err = users.GetUserByID(newUserID)
+		user, err = userservice.GetUserByID(newUserID)
 		if err != nil {
 			return nil, errors.New("failed to fetch user: " + err.Error())
 		}

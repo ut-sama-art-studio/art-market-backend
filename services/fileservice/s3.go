@@ -72,15 +72,25 @@ func UploadFileToS3(file graphql.Upload, userId string, folderPath string) (stri
 
 func DeleteUserFolder(userId string, folderPath string) error {
 	if folderPath != "" {
-		folderPath = fmt.Sprintf("%s/%s", userId, folderPath)
+		folderPath = fmt.Sprintf("%s/%s/", userId, folderPath)
 	}
-
-	_, err := s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+	// delete all objects in folder
+	listOutput, err := s3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
 		Bucket: aws.String(bucketName),
-		Key:    &folderPath,
+		Prefix: aws.String(folderPath),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to delete object %s: %w", folderPath, err)
+		fmt.Printf("Error listing objects: %s\n", err)
+		return err
+	}
+	for _, obj := range listOutput.Contents {
+		_, err = s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+			Bucket: aws.String(bucketName),
+			Key:    obj.Key,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to delete object in folder %s: %w", folderPath, err)
+		}
 	}
 	return nil
 }

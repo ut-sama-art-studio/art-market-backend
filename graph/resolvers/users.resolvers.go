@@ -14,7 +14,7 @@ import (
 	"github.com/ut-sama-art-studio/art-market-backend/graph/model"
 	"github.com/ut-sama-art-studio/art-market-backend/middlewares"
 	"github.com/ut-sama-art-studio/art-market-backend/services/fileservice"
-	"github.com/ut-sama-art-studio/art-market-backend/services/users"
+	"github.com/ut-sama-art-studio/art-market-backend/services/userservice"
 )
 
 // UpdateUser is the resolver for the updateUser field.
@@ -27,7 +27,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input mode
 		return nil, err
 	}
 
-	user, err := users.GetUserByID(id)
+	user, err := userservice.GetUserByID(id)
 	if err != nil {
 		log.Print("Error updating user: ", err)
 		return nil, err
@@ -62,7 +62,7 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, err
 		return false, err
 	}
 
-	if err := users.DeleteById(id); err != nil {
+	if err := userservice.DeleteById(id); err != nil {
 		log.Print("Error deleting user: ", err)
 		return false, err
 	}
@@ -78,7 +78,7 @@ func (r *mutationResolver) RefreshToken(ctx context.Context, input model.Refresh
 // UpdateProfilePicture is the resolver for the updateProfilePicture field.
 func (r *mutationResolver) UpdateProfilePicture(ctx context.Context, file graphql.Upload) (*model.User, error) {
 	userID := middlewares.ContextUserID(ctx)
-	user, err := users.GetUserByID(userID)
+	user, err := userservice.GetUserByID(userID)
 	if err != nil {
 		log.Print("Error updating user: ", err)
 		return nil, err
@@ -106,7 +106,7 @@ func (r *mutationResolver) UpdateProfilePicture(ctx context.Context, file graphq
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	id := middlewares.ContextUserID(ctx)
 
-	user, err := users.GetUserByID(id)
+	user, err := userservice.GetUserByID(id)
 	if err != nil {
 		log.Print("Error fetching user in getUserByID: ", err)
 		return nil, err
@@ -118,7 +118,7 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
-	user, err := users.GetUserByID(id)
+	user, err := userservice.GetUserByID(id)
 	if err != nil {
 		log.Print("Error fetching user in getUserByID: ", err)
 		return nil, err
@@ -130,7 +130,7 @@ func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	allUsers, err := users.GetAllUsers()
+	allUsers, err := userservice.GetAllUsers()
 	if err != nil {
 		log.Print("Error fetching users: ", err)
 		return nil, err

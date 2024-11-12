@@ -1,4 +1,4 @@
-package merchitems
+package merchservice
 
 import (
 	"database/sql"
@@ -35,9 +35,21 @@ func (merch *MerchItem) ToGraphqlMerchItem() *model.MerchItem {
 		Type:        merch.Type,
 		Width:       merch.Width,
 		Height:      merch.Height,
-		Images:      merch.ImageURLs,
+		Images:      filterListNil(merch.ImageURLs),
 		Unit:        merch.Unit,
 	}
+}
+
+func filterListNil(list []*string) []*string {
+	i := 0
+	for _, item := range list {
+		if item != nil {
+			list[i] = item
+			i++
+		}
+	}
+	// Slice to only include non-nil elements
+	return list[:i]
 }
 
 // Create inserts a new MerchItem into the database
@@ -70,6 +82,7 @@ func GetByID(id string) (*MerchItem, error) {
 		WHERE id = $1
 	`
 	var item MerchItem
+	item.ImageURLs = make([]*string, 5)
 	err := database.Db.QueryRow(query, id).Scan(
 		&item.ID, &item.OwnerID, &item.Name, &item.Description, &item.Price, &item.Inventory,
 		&item.Type, &item.Height, &item.Width, &item.Unit, &item.ImageURLs[0], &item.ImageURLs[1], &item.ImageURLs[2], &item.ImageURLs[3], &item.ImageURLs[4],
