@@ -7,6 +7,7 @@ import (
 )
 
 func (app *Application) AddAPIRoutes(router *chi.Mux) {
+	// /api/hello-world
 	router.Get("/hello-world", tests.HelloWorldHandler)
 
 	oauth.InitOAuth()

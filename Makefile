@@ -1,6 +1,6 @@
 include .env
 
-create-container:
+create-db-container:
 	docker run --name ${DB_CONTAINER_NAME} -p ${DB_PORT}:${DB_PORT} -e POSTGRES_USER=${POSTGRES_USER} \
 	 -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:12-alpine
 
@@ -26,18 +26,15 @@ migrate-up:
 migrate-down:
 	@sqlx migrate revert --database-url "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable"
 
-build:
-	@if [ -f "${BINARY_NAME}" ]; then \
-		rm ${BINARY_NAME}; \
-	fi
-	@echo "Building server binary..."
-	@go build -o ${BINARY_NAME} ./server/*.go
-	
-run: build 
+test:
+	@echo ${DBSTRING}
+
+run:
 	@echo "Starting server..."
-	@./${BINARY_NAME}
+	@air c .air.toml
+
+check:
+	@echo $(shell pwd)
 
 stop:
-	@echo "Stopping server..."
-	@-pkill -SIGTERM -f "./${BINARY_NAME}"
-	@echo "Server stopped..."
+	@docker stop ${API_DOCKER_NAME}

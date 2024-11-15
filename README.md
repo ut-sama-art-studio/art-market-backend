@@ -21,3 +21,8 @@ cargo install sqlx-cli
 ```
 
 To view Postgres DB, install the [Postgres extension](https://marketplace.visualstudio.com/items?itemName=ckolkman.vscode-postgres) in VSC, or a SQL manager like DBeaver
+
+## Running 
+```
+make run
+```
