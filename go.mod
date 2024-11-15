@@ -1,6 +1,6 @@
 module github.com/ut-sama-art-studio/art-market-backend
 
-go 1.23.3
+go 1.23
 
 require (
 	github.com/99designs/gqlgen v0.17.56
