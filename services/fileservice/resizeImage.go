@@ -11,7 +11,11 @@ import (
 	"github.com/disintegration/imaging"
 )
 
-// CheckAndResizeImage checks if the image is larger than 1MB, and resizes it if necessary.
+var (
+	maxFileSize = 6 * 1024 * 1024 // 6MB in bytes
+)
+
+// CheckAndResizeImage checks if the image is larger than max file size, and resizes it if necessary.
 func CheckAndResizeImage(file graphql.Upload) (io.Reader, error) {
 	// Create a buffer to hold file content
 	var buf bytes.Buffer
@@ -32,7 +36,7 @@ func CheckAndResizeImage(file graphql.Upload) (io.Reader, error) {
 	}
 
 	// Resize the image to fit within the max size
-	resizedImg := imaging.Resize(img, 3000, 0, imaging.Lanczos) // Width 800 and proportional height
+	resizedImg := imaging.Resize(img, 2000, 0, imaging.Lanczos) // Width 800 and proportional height
 	var resizedBuf bytes.Buffer
 	err = jpeg.Encode(&resizedBuf, resizedImg, nil)
 	if err != nil {
