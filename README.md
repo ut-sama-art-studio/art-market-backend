@@ -2,7 +2,7 @@
 ## Backend development Linux/WSL setup
 Have Golang installed
 
-Install required packages
+Install required linux packages
 ```
 sudo apt install make  
 sudo apt install build-essential
@@ -10,14 +10,10 @@ sudo apt install libssl-dev
 sudo apt install pkg-config
 ```
 
-Install Rust
+Install Air for hot reload && golang-migrate for migrations
 ```
-curl https://sh.rustup.rs -sSf | sh
-```
-
-Install `sqlx-cli` with Rust to manage migrations
-```
-cargo install sqlx-cli 
+go install github.com/air-verse/air@latest
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 ```
 
 To view Postgres DB, install the [Postgres extension](https://marketplace.visualstudio.com/items?itemName=ckolkman.vscode-postgres) in VSC, or a SQL manager like DBeaver

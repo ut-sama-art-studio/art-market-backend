@@ -69,18 +69,26 @@ func (app *Application) Serve(router *chi.Mux) {
 }
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+	// load .env file based on environment
+	env := os.Getenv("ENV")
+	envFile := ".dev.env"
+	if env == "production" {
+		envFile = ".env"
+	}
+
+	if err := godotenv.Load(envFile); err != nil {
+		log.Fatalf("Error loading %s file: %v", envFile, err)
 	}
 
 	port := os.Getenv("PORT")
 	fmt.Println("API is listening on port", port)
 
+	// set up routes
 	cfg := Config{Port: port, ApiPrefix: "/api"}
 	router := chi.NewRouter()
 
+	// connect to db
 	dbString := os.Getenv("DBSTRING")
-
 	if err := database.InitDB(dbString); err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}

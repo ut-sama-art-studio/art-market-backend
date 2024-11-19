@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	maxFileSize = 6 * 1024 * 1024 // 6MB in bytes
+	maxFileSize = 10 * 1024 * 1024 // 10MB in bytes
 )
 
 // CheckAndResizeImage checks if the image is larger than max file size, and resizes it if necessary.
@@ -36,7 +36,7 @@ func CheckAndResizeImage(file graphql.Upload) (io.Reader, error) {
 	}
 
 	// Resize the image to fit within the max size
-	resizedImg := imaging.Resize(img, 2000, 0, imaging.Lanczos) // Width 800 and proportional height
+	resizedImg := imaging.Resize(img, 4000, 0, imaging.Lanczos) // Width 4000 and proportional height
 	var resizedBuf bytes.Buffer
 	err = jpeg.Encode(&resizedBuf, resizedImg, nil)
 	if err != nil {

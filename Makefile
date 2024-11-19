@@ -16,25 +16,23 @@ graphql-generate:
 
 # add-migration named 'init'
 add-migration-init:
-	@sqlx migrate add -r init
+	@migrate create -ext sql -dir database/migrations -seq init
 
 # applies all migrations
 migrate-up:
-	@sqlx migrate run --database-url "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable"
+	@migrate -database ${POSTGRESQL_URL} -path database/migrations up
 
 # rollback one migration
 migrate-down:
-	@sqlx migrate revert --database-url "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable"
+	@migrate -database ${POSTGRESQL_URL} -path database/migrations down 1
 
 test:
 	@echo ${DBSTRING}
 
+# build and run go with Air
 run:
 	@echo "Starting server..."
 	@air c .air.toml
 
-check:
-	@echo $(shell pwd)
-
-stop:
-	@docker stop ${API_DOCKER_NAME}
+docker-compose-up:
+	@docker-compose up --build

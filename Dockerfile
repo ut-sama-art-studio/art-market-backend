@@ -1,42 +1,27 @@
-# Use the official Golang image as the base for building the app
-FROM golang:1.20 AS builder
+FROM golang:1.23 AS builder
 
 WORKDIR /app
 
-# Copy go.mod and go.sum files to download dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the source code directories into the container
-COPY ./database ./database
-COPY ./server ./server
-COPY ./graph ./graph
-COPY ./services ./services
-COPY ./utils ./utils
-COPY ./middlewares ./middlewares
-COPY ./tests ./tests
-COPY ./migrations ./migrations
+COPY . .
 
-# Ensure dependencies from internal packages and external modules are downloaded
 RUN go get -d ./...
 
-# Build the application
-RUN go build -o /app/server-binary ./server/*.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/server-binary ./server/*.go
 
-# Runtime image
+# 2nd stage runtime image
 FROM alpine:3.18
-WORKDIR /app
-COPY --from=builder /app/server-binary .
 
-# Expose the API port
+WORKDIR /app
+
+ENV ENV=production
+
+COPY --from=builder /app/server-binary .
+COPY --from=builder /app/.env .env
+COPY --from=builder /app/database/migrations /app/database/migrations
+
 EXPOSE 8080
 
-# Start the API server
 CMD ["./server-binary"]
-
-
-# building container
-#   docker build -t art-market-api .
-
-# running with .env mounted at runtime
-#   docker run --network art-market-network -v -p 8080:8080 --name art-market-api art-market-api:latest  
