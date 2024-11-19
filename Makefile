@@ -34,5 +34,19 @@ run:
 	@echo "Starting server..."
 	@air c .air.toml
 
-docker-compose-up:
+# use remote docker context
+context-remote:
+	@docker context use do-droplet 
+	@eval "$(ssh-agent -s)"
+	@ssh-add ~/.ssh/id_rsa
+	@docker info 
+
+# for rebuildling docker compose
+docker-rebuild:
+	@docker-compose down
 	@docker-compose up --build
+
+docker-prune:
+	@docker image prune -f
+	@docker volume prune -f
+	@docker container prune -f
