@@ -1,4 +1,4 @@
-include .env
+include .dev.env
 
 create-db-container:
 	docker run --name ${DB_CONTAINER_NAME} -p ${DB_PORT}:${DB_PORT} -e POSTGRES_USER=${POSTGRES_USER} \
@@ -37,7 +37,7 @@ run:
 # use remote docker context
 context-remote:
 	@docker context use do-droplet 
-	@eval "$(ssh-agent -s)"
+	eval "$(ssh-agent -s)"
 	@ssh-add ~/.ssh/id_rsa
 	@docker info 
 

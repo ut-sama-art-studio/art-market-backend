@@ -15,11 +15,19 @@ import (
 	"github.com/ut-sama-art-studio/art-market-backend/middlewares"
 	"github.com/ut-sama-art-studio/art-market-backend/services/fileservice"
 	merchitems "github.com/ut-sama-art-studio/art-market-backend/services/merchservice"
+	"github.com/ut-sama-art-studio/art-market-backend/services/userservice"
 )
 
 // CreateMerch is the resolver for the createMerch field.
 func (r *mutationResolver) CreateMerch(ctx context.Context, input model.NewMerch) (*model.MerchItem, error) {
 	ownerId := middlewares.ContextUserID(ctx)
+	user, err := userservice.GetUserByID(ownerId)
+	if err != nil {
+		return nil, err
+	}
+	if user.Role != "artist" && user.Role != "director" && user.Role != "admin" {
+		return nil, fmt.Errorf("user is not an artist")
+	}
 
 	merchId := uuid.New().String()
 	folderPath := merchId // store images under merchId
@@ -48,7 +56,7 @@ func (r *mutationResolver) CreateMerch(ctx context.Context, input model.NewMerch
 		ImageURLs:   imageURLs,
 	}
 
-	_, err := merch.Create()
+	_, err = merch.Create()
 	if err != nil {
 		fileservice.DeleteUserFolder(ownerId, folderPath)
 		return nil, fmt.Errorf("could not create merch item: %w", err)

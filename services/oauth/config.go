@@ -23,8 +23,8 @@ func InitOAuth() {
 	}
 
 	if os.Getenv("ENV") == "production" {
-		FrontEndURL = "https://utsama-art-studio.vercel.app"
+		FrontEndURL = os.Getenv("FRONT_END_URL")
 	} else {
-		FrontEndURL = "http://localhost:3000"
+		FrontEndURL = os.Getenv("FRONT_END_URL_LOCALHOST")
 	}
 }

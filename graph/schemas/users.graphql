@@ -7,7 +7,7 @@ type User {
     email: String
     profilePicture: String
     bio: String
-    role: String
+    role: String # 'client', 'artist', 'director', 'admin'
 }
 
 input UpdateUser {
@@ -24,13 +24,16 @@ input RefreshTokenInput {
 extend type Mutation {
     updateUser(id: ID!, input: UpdateUser!): User! @auth
     deleteUser(id: ID!): Boolean! @auth
-    refreshToken(input: RefreshTokenInput!): String!
 
     updateProfilePicture(file: Upload!): User! @auth
+    setRole(id: ID!, role: String!): User!
+    applyArtistRoleToken(token: String!): User! @auth
 }
 
 extend type Query {
     me: User!
     user(id: ID!): User!
     users: [User!]!
+    artists: [User!]!
+    generateArtistRoleToken: String! @auth
 }

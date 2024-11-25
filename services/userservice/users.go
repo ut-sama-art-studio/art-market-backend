@@ -57,13 +57,13 @@ func (user User) Insert() (string, error) {
 
 func GetUserByOauthID(oauthID string) (*User, error) {
 	query := `
-		SELECT id, username, name, email, password, profile_picture, bio
+		SELECT id, username, name, email, password, profile_picture, bio, role
 		FROM "User"
 		WHERE oauth_id = $1
 	`
 
 	var user User
-	err := database.Db.QueryRow(query, oauthID).Scan(&user.ID, &user.Username, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.Bio)
+	err := database.Db.QueryRow(query, oauthID).Scan(&user.ID, &user.Username, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.Bio, &user.Role)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -81,13 +81,13 @@ func GetUserByID(id string) (*User, error) {
 	}
 
 	query := `
-		SELECT id, username, name, email, password, profile_picture, bio
+		SELECT id, username, name, email, password, profile_picture, bio, role
 		FROM "User"
 		WHERE id = $1
 	`
 
 	var user User
-	err := database.Db.QueryRow(query, id).Scan(&user.ID, &user.Username, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.Bio)
+	err := database.Db.QueryRow(query, id).Scan(&user.ID, &user.Username, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.Bio, &user.Role)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -103,28 +103,20 @@ func GetUserByID(id string) (*User, error) {
 func (user *User) Update() error {
 	query := `
 		UPDATE "User"
-		SET name = $1, email = $2, profile_picture = $3, bio = $4
-		WHERE id = $5
+		SET 
+			username = $2, 
+			name = $3, 
+			email = $4, 
+			password = $5, 
+			profile_picture = $6, 
+			bio = $7, 
+			role = $8
+		WHERE id = $1
 	`
 
-	_, err := database.Db.Exec(query, user.Name, user.Email, user.ProfilePicture, user.Bio, user.ID)
+	_, err := database.Db.Exec(query, user.ID, user.Username, user.Name, user.Email, user.Password, user.ProfilePicture, user.Bio, user.Role)
 	if err != nil {
 		log.Print("Error updating user: ", err)
-		return err
-	}
-
-	return nil
-}
-
-func (user *User) UpdateUsername(username string) error {
-	query := `
-		UPDATE "User"
-		SET username = $1
-		WHERE id = $2
-	`
-	_, err := database.Db.Exec(query, username, user.ID)
-	if err != nil {
-		log.Print("Error updating user's username: ", err)
 		return err
 	}
 
@@ -152,7 +144,7 @@ func DeleteById(id string) error {
 // retrieves all users from the database
 func GetAllUsers() ([]User, error) {
 	query := `
-		SELECT id, username, name, email, password, profile_picture, bio
+		SELECT id, username, name, email, password, profile_picture, bio, role
 		FROM "User"
 	`
 
@@ -166,7 +158,41 @@ func GetAllUsers() ([]User, error) {
 	var users []User
 	for rows.Next() {
 		var user User
-		err := rows.Scan(&user.ID, user.Username, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.Bio)
+		err := rows.Scan(&user.ID, &user.Username, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.Bio, &user.Role)
+		if err != nil {
+			log.Print("Error scanning row: ", err)
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		log.Print("Error with rows: ", err)
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// Retrieves all artist, director, and admin users
+func GetAllArtists() ([]User, error) {
+	query := `
+		SELECT id, username, name, email, password, profile_picture, bio, role
+		FROM "User"
+		WHERE role = 'artist' OR role = 'director' OR role = 'admin'
+	`
+
+	rows, err := database.Db.Query(query)
+	if err != nil {
+		log.Print("Error executing query: ", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []User
+	for rows.Next() {
+		var user User
+		err := rows.Scan(&user.ID, &user.Username, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.Bio, &user.Role)
 		if err != nil {
 			log.Print("Error scanning row: ", err)
 			return nil, err

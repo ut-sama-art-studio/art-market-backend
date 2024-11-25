@@ -54,9 +54,13 @@ func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	// update with latest username incase it was changed
+	
 	username, _ := userInfo["username"].(string)
-	user.UpdateUsername(username)
+	if username != user.Username {
+		// update with latest username incase it was changed
+		user.Username = username
+		user.Update()
+	}
 
 	jwtToken, err := jwt.GenerateToken(user)
 	if err != nil {

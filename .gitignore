@@ -1,3 +1,4 @@
 server-binary
 *.env*
 /tmp
+.vscode

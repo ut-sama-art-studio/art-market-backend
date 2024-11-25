@@ -9,12 +9,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/ut-sama-art-studio/art-market-backend/graph/model"
 	"github.com/ut-sama-art-studio/art-market-backend/middlewares"
 	"github.com/ut-sama-art-studio/art-market-backend/services/fileservice"
 	"github.com/ut-sama-art-studio/art-market-backend/services/userservice"
+	"github.com/ut-sama-art-studio/art-market-backend/utils/jwt"
 )
 
 // UpdateUser is the resolver for the updateUser field.
@@ -29,7 +31,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input mode
 
 	user, err := userservice.GetUserByID(id)
 	if err != nil {
-		log.Print("Error updating user: ", err)
+		log.Print("Error finding user: ", err)
 		return nil, err
 	}
 	// update
@@ -70,17 +72,12 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, err
 	return true, nil
 }
 
-// RefreshToken is the resolver for the refreshToken field.
-func (r *mutationResolver) RefreshToken(ctx context.Context, input model.RefreshTokenInput) (string, error) {
-	panic(fmt.Errorf("not implemented: RefreshToken - refreshToken"))
-}
-
 // UpdateProfilePicture is the resolver for the updateProfilePicture field.
 func (r *mutationResolver) UpdateProfilePicture(ctx context.Context, file graphql.Upload) (*model.User, error) {
 	userID := middlewares.ContextUserID(ctx)
 	user, err := userservice.GetUserByID(userID)
 	if err != nil {
-		log.Print("Error updating user: ", err)
+		log.Print("Error finding user: ", err)
 		return nil, err
 	}
 
@@ -100,6 +97,50 @@ func (r *mutationResolver) UpdateProfilePicture(ctx context.Context, file graphq
 	}
 
 	return user.ToGraphUser(), nil
+}
+
+// Sets the role of the user
+func (r *mutationResolver) SetRole(ctx context.Context, id string, role string) (*model.User, error) {
+	user, err := userservice.GetUserByID(id)
+	if err != nil {
+		log.Print("Error finding user: ", err)
+		return nil, err
+	}
+	// update
+	user.Role = role
+	if err = user.Update(); err != nil {
+		log.Print("Error updating user: ", err)
+		return nil, err
+	}
+	return user.ToGraphUser(), nil
+}
+
+// Apply token generated to give user artist role
+func (r *mutationResolver) ApplyArtistRoleToken(ctx context.Context, token string) (*model.User, error) {
+	id := middlewares.ContextUserID(ctx)
+
+	user, err := userservice.GetUserByID(id)
+	if err != nil {
+		log.Print("Error fetching user in getUserByID: ", err)
+		return nil, err
+	}
+
+	if user.Role == "admin" || user.Role == "director" || user.Role == "artist" {
+		return user.ToGraphUser(), nil
+	}
+
+	if _, err := jwt.VerifyKeyValueToken(token, "role", "artist"); err != nil {
+		// Token invalid
+		return nil, err
+	} else {
+		// Token valid, update user role
+		user.Role = "artist"
+		if err = user.Update(); err != nil {
+			log.Print("Error updating user: ", err)
+			return nil, err
+		}
+		return user.ToGraphUser(), nil
+	}
 }
 
 // Me is the resolver for the me field.
@@ -138,15 +179,42 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 
 	var result []*model.User
 	for _, user := range allUsers {
-		result = append(result, &model.User{
-			ID:             user.ID,
-			Name:           user.Name,
-			Username:       &user.Username,
-			Email:          user.Email,
-			ProfilePicture: user.ProfilePicture,
-			Bio:            user.Bio,
-		})
+		result = append(result, user.ToGraphUser())
 	}
 
 	return result, nil
+}
+
+// Returns all artists
+func (r *queryResolver) Artists(ctx context.Context) ([]*model.User, error) {
+	allUsers, err := userservice.GetAllArtists()
+	if err != nil {
+		log.Print("Error fetching artists: ", err)
+		return nil, err
+	}
+
+	var result []*model.User
+	for _, user := range allUsers {
+		result = append(result, user.ToGraphUser())
+	}
+
+	return result, nil
+}
+
+// Generate a token allowing user who apply it to become an artist
+func (r *queryResolver) GenerateArtistRoleToken(ctx context.Context) (string, error) {
+	id := middlewares.ContextUserID(ctx)
+
+	user, err := userservice.GetUserByID(id)
+	if err != nil {
+		log.Print("Error fetching user in getUserByID: ", err)
+		return "", err
+	}
+
+	if user.Role == "admin" || user.Role == "director" {
+		// Token valid for 7 days
+		return jwt.GenerateKeyValueToken("role", "artist", time.Now().AddDate(0, 0, 7))
+	}
+
+	return "", fmt.Errorf("no permission to create token")
 }
