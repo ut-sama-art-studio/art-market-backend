@@ -117,6 +117,11 @@ func (r *queryResolver) UserMerchItems(ctx context.Context, userID string) ([]*m
 	return merchItems, nil
 }
 
+// Search merch with pagination
+func (r *queryResolver) SearchMerch(ctx context.Context, keyword *string, typeArg *string, minPrice *float64, maxPrice *float64, page *int, pageSize *int, sortBy *string, sortOrder *string) (*model.MerchSearchResult, error) {
+	return merchitems.SearchMerch(keyword, typeArg, minPrice, maxPrice, page, pageSize, sortBy, sortOrder)
+}
+
 // Query returns graph.QueryResolver implementation.
 func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
 

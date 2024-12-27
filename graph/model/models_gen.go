@@ -20,6 +20,14 @@ type MerchItem struct {
 	Images      []*string `json:"images"`
 }
 
+type MerchSearchResult struct {
+	Items       []*MerchItem `json:"items"`
+	TotalItems  int          `json:"totalItems"`
+	TotalPages  int          `json:"totalPages"`
+	CurrentPage int          `json:"currentPage"`
+	PageSize    int          `json:"pageSize"`
+}
+
 type Mutation struct {
 }
 

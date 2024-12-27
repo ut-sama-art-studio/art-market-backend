@@ -62,6 +62,14 @@ type ComplexityRoot struct {
 		Width       func(childComplexity int) int
 	}
 
+	MerchSearchResult struct {
+		CurrentPage func(childComplexity int) int
+		Items       func(childComplexity int) int
+		PageSize    func(childComplexity int) int
+		TotalItems  func(childComplexity int) int
+		TotalPages  func(childComplexity int) int
+	}
+
 	Mutation struct {
 		ApplyArtistRoleToken func(childComplexity int, token string) int
 		CreateMerch          func(childComplexity int, input model.NewMerch) int
@@ -79,6 +87,7 @@ type ComplexityRoot struct {
 		Artists                 func(childComplexity int) int
 		GenerateArtistRoleToken func(childComplexity int) int
 		Me                      func(childComplexity int) int
+		SearchMerch             func(childComplexity int, keyword *string, typeArg *string, minPrice *float64, maxPrice *float64, page *int, pageSize *int, sortBy *string, sortOrder *string) int
 		User                    func(childComplexity int, id string) int
 		UserMerchItems          func(childComplexity int, userID string) int
 		Users                   func(childComplexity int) int
@@ -109,6 +118,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	UserMerchItems(ctx context.Context, userID string) ([]*model.MerchItem, error)
+	SearchMerch(ctx context.Context, keyword *string, typeArg *string, minPrice *float64, maxPrice *float64, page *int, pageSize *int, sortBy *string, sortOrder *string) (*model.MerchSearchResult, error)
 	Me(ctx context.Context) (*model.User, error)
 	User(ctx context.Context, id string) (*model.User, error)
 	Users(ctx context.Context) ([]*model.User, error)
@@ -211,6 +221,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MerchItem.Width(childComplexity), true
+
+	case "MerchSearchResult.currentPage":
+		if e.complexity.MerchSearchResult.CurrentPage == nil {
+			break
+		}
+
+		return e.complexity.MerchSearchResult.CurrentPage(childComplexity), true
+
+	case "MerchSearchResult.items":
+		if e.complexity.MerchSearchResult.Items == nil {
+			break
+		}
+
+		return e.complexity.MerchSearchResult.Items(childComplexity), true
+
+	case "MerchSearchResult.pageSize":
+		if e.complexity.MerchSearchResult.PageSize == nil {
+			break
+		}
+
+		return e.complexity.MerchSearchResult.PageSize(childComplexity), true
+
+	case "MerchSearchResult.totalItems":
+		if e.complexity.MerchSearchResult.TotalItems == nil {
+			break
+		}
+
+		return e.complexity.MerchSearchResult.TotalItems(childComplexity), true
+
+	case "MerchSearchResult.totalPages":
+		if e.complexity.MerchSearchResult.TotalPages == nil {
+			break
+		}
+
+		return e.complexity.MerchSearchResult.TotalPages(childComplexity), true
 
 	case "Mutation.applyArtistRoleToken":
 		if e.complexity.Mutation.ApplyArtistRoleToken == nil {
@@ -352,6 +397,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Me(childComplexity), true
+
+	case "Query.searchMerch":
+		if e.complexity.Query.SearchMerch == nil {
+			break
+		}
+
+		args, err := ec.field_Query_searchMerch_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.SearchMerch(childComplexity, args["keyword"].(*string), args["type"].(*string), args["minPrice"].(*float64), args["maxPrice"].(*float64), args["page"].(*int), args["pageSize"].(*int), args["sortBy"].(*string), args["sortOrder"].(*string)), true
 
 	case "Query.user":
 		if e.complexity.Query.User == nil {
@@ -743,6 +800,84 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_searchMerch_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["keyword"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keyword"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["keyword"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["type"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["type"] = arg1
+	var arg2 *float64
+	if tmp, ok := rawArgs["minPrice"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minPrice"))
+		arg2, err = ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["minPrice"] = arg2
+	var arg3 *float64
+	if tmp, ok := rawArgs["maxPrice"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxPrice"))
+		arg3, err = ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["maxPrice"] = arg3
+	var arg4 *int
+	if tmp, ok := rawArgs["page"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+		arg4, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg4
+	var arg5 *int
+	if tmp, ok := rawArgs["pageSize"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+		arg5, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pageSize"] = arg5
+	var arg6 *string
+	if tmp, ok := rawArgs["sortBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortBy"))
+		arg6, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sortBy"] = arg6
+	var arg7 *string
+	if tmp, ok := rawArgs["sortOrder"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortOrder"))
+		arg7, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sortOrder"] = arg7
 	return args, nil
 }
 
@@ -1278,6 +1413,250 @@ func (ec *executionContext) fieldContext_MerchItem_images(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MerchSearchResult_items(ctx context.Context, field graphql.CollectedField, obj *model.MerchSearchResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MerchSearchResult_items(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Items, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MerchItem)
+	fc.Result = res
+	return ec.marshalNMerchItem2ᚕᚖgithubᚗcomᚋutᚑsamaᚑartᚑstudioᚋartᚑmarketᚑbackendᚋgraphᚋmodelᚐMerchItem(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MerchSearchResult_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MerchSearchResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MerchItem_id(ctx, field)
+			case "ownerId":
+				return ec.fieldContext_MerchItem_ownerId(ctx, field)
+			case "name":
+				return ec.fieldContext_MerchItem_name(ctx, field)
+			case "description":
+				return ec.fieldContext_MerchItem_description(ctx, field)
+			case "price":
+				return ec.fieldContext_MerchItem_price(ctx, field)
+			case "inventory":
+				return ec.fieldContext_MerchItem_inventory(ctx, field)
+			case "type":
+				return ec.fieldContext_MerchItem_type(ctx, field)
+			case "width":
+				return ec.fieldContext_MerchItem_width(ctx, field)
+			case "height":
+				return ec.fieldContext_MerchItem_height(ctx, field)
+			case "unit":
+				return ec.fieldContext_MerchItem_unit(ctx, field)
+			case "images":
+				return ec.fieldContext_MerchItem_images(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MerchItem", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MerchSearchResult_totalItems(ctx context.Context, field graphql.CollectedField, obj *model.MerchSearchResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MerchSearchResult_totalItems(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalItems, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MerchSearchResult_totalItems(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MerchSearchResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MerchSearchResult_totalPages(ctx context.Context, field graphql.CollectedField, obj *model.MerchSearchResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MerchSearchResult_totalPages(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalPages, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MerchSearchResult_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MerchSearchResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MerchSearchResult_currentPage(ctx context.Context, field graphql.CollectedField, obj *model.MerchSearchResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MerchSearchResult_currentPage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CurrentPage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MerchSearchResult_currentPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MerchSearchResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MerchSearchResult_pageSize(ctx context.Context, field graphql.CollectedField, obj *model.MerchSearchResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MerchSearchResult_pageSize(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageSize, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MerchSearchResult_pageSize(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MerchSearchResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2198,6 +2577,73 @@ func (ec *executionContext) fieldContext_Query_userMerchItems(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_userMerchItems_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_searchMerch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_searchMerch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().SearchMerch(rctx, fc.Args["keyword"].(*string), fc.Args["type"].(*string), fc.Args["minPrice"].(*float64), fc.Args["maxPrice"].(*float64), fc.Args["page"].(*int), fc.Args["pageSize"].(*int), fc.Args["sortBy"].(*string), fc.Args["sortOrder"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MerchSearchResult)
+	fc.Result = res
+	return ec.marshalNMerchSearchResult2ᚖgithubᚗcomᚋutᚑsamaᚑartᚑstudioᚋartᚑmarketᚑbackendᚋgraphᚋmodelᚐMerchSearchResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_searchMerch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "items":
+				return ec.fieldContext_MerchSearchResult_items(ctx, field)
+			case "totalItems":
+				return ec.fieldContext_MerchSearchResult_totalItems(ctx, field)
+			case "totalPages":
+				return ec.fieldContext_MerchSearchResult_totalPages(ctx, field)
+			case "currentPage":
+				return ec.fieldContext_MerchSearchResult_currentPage(ctx, field)
+			case "pageSize":
+				return ec.fieldContext_MerchSearchResult_pageSize(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MerchSearchResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_searchMerch_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5058,6 +5504,65 @@ func (ec *executionContext) _MerchItem(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
+var merchSearchResultImplementors = []string{"MerchSearchResult"}
+
+func (ec *executionContext) _MerchSearchResult(ctx context.Context, sel ast.SelectionSet, obj *model.MerchSearchResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, merchSearchResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MerchSearchResult")
+		case "items":
+			out.Values[i] = ec._MerchSearchResult_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalItems":
+			out.Values[i] = ec._MerchSearchResult_totalItems(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalPages":
+			out.Values[i] = ec._MerchSearchResult_totalPages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "currentPage":
+			out.Values[i] = ec._MerchSearchResult_currentPage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageSize":
+			out.Values[i] = ec._MerchSearchResult_pageSize(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -5199,6 +5704,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_userMerchItems(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "searchMerch":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_searchMerch(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -5777,6 +6304,21 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNMerchItem2githubᚗcomᚋutᚑsamaᚑartᚑstudioᚋartᚑmarketᚑbackendᚋgraphᚋmodelᚐMerchItem(ctx context.Context, sel ast.SelectionSet, v model.MerchItem) graphql.Marshaler {
 	return ec._MerchItem(ctx, sel, &v)
 }
@@ -5827,6 +6369,20 @@ func (ec *executionContext) marshalNMerchItem2ᚖgithubᚗcomᚋutᚑsamaᚑart�
 		return graphql.Null
 	}
 	return ec._MerchItem(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMerchSearchResult2githubᚗcomᚋutᚑsamaᚑartᚑstudioᚋartᚑmarketᚑbackendᚋgraphᚋmodelᚐMerchSearchResult(ctx context.Context, sel ast.SelectionSet, v model.MerchSearchResult) graphql.Marshaler {
+	return ec._MerchSearchResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMerchSearchResult2ᚖgithubᚗcomᚋutᚑsamaᚑartᚑstudioᚋartᚑmarketᚑbackendᚋgraphᚋmodelᚐMerchSearchResult(ctx context.Context, sel ast.SelectionSet, v *model.MerchSearchResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MerchSearchResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNNewMerch2githubᚗcomᚋutᚑsamaᚑartᚑstudioᚋartᚑmarketᚑbackendᚋgraphᚋmodelᚐNewMerch(ctx context.Context, v interface{}) (model.NewMerch, error) {

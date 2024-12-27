@@ -2,6 +2,7 @@ package merchservice
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/ut-sama-art-studio/art-market-backend/database"
@@ -23,6 +24,10 @@ type MerchItem struct {
 	ImageURLs   []*string `json:"images"` // Stores up to 5 image URLs, order matters
 	Timestamp   string    `json:"timestamp"`
 }
+
+var (
+	ALL_COLUMNS = `id, owner_id, name, description, price, inventory, type, height, width, unit, image_url1, image_url2, image_url3, image_url4, image_url5, timestamp`
+)
 
 func (merch *MerchItem) ToGraphqlMerchItem() *model.MerchItem {
 	return &model.MerchItem{
@@ -52,6 +57,61 @@ func filterListNil(list []*string) []*string {
 	return list[:i]
 }
 
+func scanMerchItemRow(scanner interface {
+	Scan(dest ...interface{}) error
+}) (*MerchItem, error) {
+	var item MerchItem
+	item.ImageURLs = make([]*string, 5)
+
+	err := scanner.Scan(
+		&item.ID, &item.OwnerID, &item.Name, &item.Description, &item.Price, &item.Inventory,
+		&item.Type, &item.Height, &item.Width, &item.Unit,
+		&item.ImageURLs[0], &item.ImageURLs[1], &item.ImageURLs[2], &item.ImageURLs[3], &item.ImageURLs[4],
+		&item.Timestamp,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &item, nil
+}
+
+// Scans a single row
+func scanMerchItem(row *sql.Row) (*MerchItem, error) {
+	item, err := scanMerchItemRow(row)
+	if err == sql.ErrNoRows {
+		log.Println("No merch item found:", err)
+		return nil, err
+	} else if err != nil {
+		log.Println("Error scanning single merch item:", err)
+		return nil, err
+	}
+	return item, nil
+}
+
+// Scans multiple rows
+func scanMerchItems(rows *sql.Rows) ([]MerchItem, error) {
+	var items []MerchItem
+
+	defer rows.Close()
+	for rows.Next() {
+		item, err := scanMerchItemRow(rows)
+		if err != nil {
+			log.Println("Error scanning merch item row:", err)
+			return nil, err
+		}
+		items = append(items, *item)
+	}
+
+	// Check for errors encountered during iteration
+	if err := rows.Err(); err != nil {
+		log.Println("Error iterating through rows:", err)
+		return nil, err
+	}
+
+	return items, nil
+}
+
 // Create inserts a new MerchItem into the database
 func (item *MerchItem) Create() (string, error) {
 	query := `
@@ -77,25 +137,17 @@ func (item *MerchItem) Create() (string, error) {
 // GetByID retrieves a MerchItem by its ID
 func GetByID(id string) (*MerchItem, error) {
 	query := `
-		SELECT id, owner_id, name, description, price, inventory, type, height, width, unit, image_url1, image_url2, image_url3, image_url4, image_url5, timestamp
+		SELECT ` + ALL_COLUMNS + `
 		FROM "MerchItem"
 		WHERE id = $1
 	`
-	var item MerchItem
-	item.ImageURLs = make([]*string, 5)
-	err := database.Db.QueryRow(query, id).Scan(
-		&item.ID, &item.OwnerID, &item.Name, &item.Description, &item.Price, &item.Inventory,
-		&item.Type, &item.Height, &item.Width, &item.Unit, &item.ImageURLs[0], &item.ImageURLs[1], &item.ImageURLs[2], &item.ImageURLs[3], &item.ImageURLs[4],
-		&item.Timestamp,
-	)
+	row := database.Db.QueryRow(query, id)
+	merch, err := scanMerchItem(row)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
-		log.Print("Error fetching MerchItem by ID: ", err)
 		return nil, err
 	}
-	return &item, nil
+
+	return merch, nil
 }
 
 // Update modifies an existing MerchItem in the database
@@ -131,7 +183,7 @@ func DeleteByID(id string) error {
 // GetByOwnerID retrieves all MerchItems belonging to a specific owner by their owner ID.
 func GetByOwnerID(ownerID string) ([]MerchItem, error) {
 	query := `
-		SELECT id, owner_id, name, description, price, inventory, type, height, width, unit, image_url1, image_url2, image_url3, image_url4, image_url5, timestamp
+		SELECT ` + ALL_COLUMNS + `
 		FROM "MerchItem"
 		WHERE owner_id = $1
 		ORDER BY timestamp DESC
@@ -143,26 +195,97 @@ func GetByOwnerID(ownerID string) ([]MerchItem, error) {
 	}
 	defer rows.Close()
 
-	var items []MerchItem
-	for rows.Next() {
-		var item MerchItem
-		item.ImageURLs = make([]*string, 5)
-		err := rows.Scan(
-			&item.ID, &item.OwnerID, &item.Name, &item.Description, &item.Price, &item.Inventory,
-			&item.Type, &item.Height, &item.Width, &item.Unit, &item.ImageURLs[0], &item.ImageURLs[1], &item.ImageURLs[2], &item.ImageURLs[3], &item.ImageURLs[4],
-			&item.Timestamp,
-		)
-		if err != nil {
-			log.Printf("Error scanning MerchItem for owner %s: %v", ownerID, err)
-			return nil, err
-		}
-		items = append(items, item)
-	}
-
-	if err = rows.Err(); err != nil {
-		log.Printf("Error with MerchItems rows for owner %s: %v", ownerID, err)
+	items, err := scanMerchItems(rows)
+	if err != nil {
 		return nil, err
 	}
 
 	return items, nil
+}
+
+func SearchMerch(keyword *string, typeArg *string, minPrice *float64, maxPrice *float64, page *int, pageSize *int, sortBy *string, sortOrder *string) (*model.MerchSearchResult, error) {
+	var items []MerchItem
+
+	// Build the query dynamically
+	query := `FROM "MerchItem" WHERE 1=1` // 1=1 to start the where chain
+	args := []interface{}{}
+
+	// Add default values to optional parameters
+	if keyword != nil && *keyword != "" {
+		query += fmt.Sprintf(` AND (name ILIKE $%d OR description ILIKE $%d)`, len(args)+1, len(args)+2)
+		args = append(args, "%"+*keyword+"%", "%"+*keyword+"%")
+	}
+	if typeArg != nil && *typeArg != "" {
+		query += fmt.Sprintf(` AND type = $%d`, len(args)+1)
+		args = append(args, *typeArg)
+	}
+	if minPrice != nil {
+		query += fmt.Sprintf(` AND price >= $%d`, len(args)+1)
+		args = append(args, *minPrice)
+	}
+	if maxPrice != nil {
+		query += fmt.Sprintf(` AND price <= $%d`, len(args)+1)
+		args = append(args, *maxPrice)
+	}
+
+	if page == nil || *page < 1 {
+		// Set defaults for pagination
+		p := 1
+		page = &p
+	}
+	if pageSize == nil || *pageSize < 1 {
+		ps := 10
+		pageSize = &ps
+	}
+
+	// Count total items for pagination
+	totalQuery := `SELECT COUNT(*) ` + query
+	var totalItems int
+	err := database.Db.QueryRow(totalQuery, args...).Scan(&totalItems)
+	if err != nil {
+		return nil, err
+	}
+	totalPages := (totalItems + *pageSize - 1) / *pageSize // ceil
+
+	// Add sorting
+	sortField := "name"
+	if sortBy != nil && *sortBy != "" {
+		sortField = *sortBy
+	}
+	order := "asc"
+	if sortOrder != nil && *sortOrder == "desc" {
+		order = "desc"
+	}
+	query = `SELECT ` + ALL_COLUMNS + ` ` + query + fmt.Sprintf(` ORDER BY %s %s`, sortField, order)
+
+	// Add pagination
+	offset := (*page - 1) * *pageSize
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
+	args = append(args, *pageSize, offset)
+
+	// Execute the query
+	rows, err := database.Db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items, err = scanMerchItems(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	// convert to model objects
+	var merchItems []*model.MerchItem
+	for _, item := range items {
+		merchItems = append(merchItems, item.ToGraphqlMerchItem())
+	}
+
+	return &model.MerchSearchResult{
+		Items:       merchItems,
+		TotalItems:  totalItems,
+		TotalPages:  totalPages,
+		CurrentPage: *page,
+		PageSize:    *pageSize,
+	}, nil
 }

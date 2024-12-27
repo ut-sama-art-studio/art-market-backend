@@ -39,6 +39,14 @@ input UpdateMerch {
     newImages: [Upload!]
 }
 
+type MerchSearchResult {
+    items: [MerchItem]!
+    totalItems: Int!
+    totalPages: Int!
+    currentPage: Int!
+    pageSize: Int!
+}
+
 extend type Mutation {
     createMerch(input: NewMerch!): MerchItem! @auth
     updateMerch(input: UpdateMerch!): MerchItem! @auth
@@ -48,4 +56,16 @@ extend type Mutation {
 extend type Query {
     # merch(id: ID!): MerchItem!
     userMerchItems(userId: ID!): [MerchItem]!
+
+    # search merch with pagination
+    searchMerch(
+        keyword: String
+        type: String
+        minPrice: Float # inclusive
+        maxPrice: Float # inclusive
+        page: Int = 1
+        pageSize: Int = 10
+        sortBy: String = "name" # sql column name
+        sortOrder: String = "asc" # asc or desc
+    ): MerchSearchResult!
 }
