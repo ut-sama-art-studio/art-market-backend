@@ -44,7 +44,7 @@ context-remote:
 # for rebuildling docker compose
 docker-rebuild:
 	@docker-compose down
-	@docker-compose up --build
+	@docker-compose up --build -d
 
 docker-prune:
 	@docker image prune -f
