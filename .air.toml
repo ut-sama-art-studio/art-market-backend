@@ -1,6 +1,6 @@
 [build]
-bin = "./tmp/server-binary"
-cmd = "go build -o ./tmp/server-binary ./server/*.go"
+bin = "./tmp/server-binary.exe"
+cmd = "go build -o ./tmp/server-binary.exe ./server/*.go"
 delay = 1000
 exclude_dir = ["assets", "tmp", "vendor", "testdata"]
 include_ext = ["go", "tpl", "tmpl", "html"]
