@@ -1,7 +1,7 @@
 include .dev.env
 
 create-db-container:
-	docker run --name ${DB_CONTAINER_NAME} -p ${DB_PORT}:${DB_PORT} -e POSTGRES_USER=${POSTGRES_USER} \
+	docker run -it --rm --add-host=host.docker.internal:host-gateway --name ${DB_CONTAINER_NAME} -p ${DB_PORT}:${DB_PORT} -e POSTGRES_USER=${POSTGRES_USER} \
 	 -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:12-alpine
 
 create-db:
@@ -25,6 +25,11 @@ migrate-up:
 # rollback one migration
 migrate-down:
 	@migrate -database ${POSTGRESQL_URL} -path database/migrations down 1
+
+#get the POSTGRESQL_URL
+URL:
+	@echo ${POSTGRESQL_URL}
+
 
 test:
 	@echo ${DBSTRING}

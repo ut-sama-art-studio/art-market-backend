@@ -10,5 +10,5 @@ CREATE TABLE
         "email" VARCHAR(128) NOT NULL UNIQUE,
         "password" VARCHAR(128), -- hashed password
         "profile_picture" varchar(255),
-        "bio" varchar(255),
+        "bio" varchar(255)
     );
