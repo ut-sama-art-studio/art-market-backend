@@ -1,0 +1,8 @@
+ALTER TABLE "User" 
+DROP CONSTRAINT IF EXISTS valid_role;
+
+ALTER TABLE "User"
+DROP COLUMN IF EXISTS "timestamp";
+
+ALTER TABLE "User"
+DROP COLUMN IF EXISTS "socials";

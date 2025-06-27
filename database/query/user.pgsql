@@ -1,4 +1,1 @@
--- SELECT * from "User"
-UPDATE "User"
-SET
-    profile_picture = NULL;
+SELECT * from "User"
