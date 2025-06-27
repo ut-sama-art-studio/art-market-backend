@@ -14,9 +14,9 @@ graphql-generate:
 	@go run github.com/99designs/gqlgen generate
 	@echo "Generate successful"
 
-# add-migration named 'init'
-add-migration-init:
-	@migrate create -ext sql -dir database/migrations -seq init
+# add-migration given NAME=" "
+add-migration:
+	@migrate create -ext sql -dir database/migrations -format unix $(NAME)   
 
 # applies all migrations
 migrate-up:
@@ -25,6 +25,14 @@ migrate-up:
 # rollback one migration
 migrate-down:
 	@migrate -database ${POSTGRESQL_URL} -path database/migrations down 1
+
+# check current migration version
+migrate-version:
+	@migrate -database ${POSTGRESQL_URL} -path database/migrations version
+
+# force apply migration given VERSION
+migrate-force:
+	@migrate -database ${POSTGRESQL_URL} -path database/migrations force $(VERSION)   
 
 #get the POSTGRESQL_URL
 URL:
