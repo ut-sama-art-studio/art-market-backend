@@ -1,16 +1,13 @@
 
 ## Backend development Linux/WSL setup
-Install Golang 1.23 
+Install [Golang 1.23](https://go.dev/dl/)
 
-Install required linux packages
+Install the required linux packages:
 ```bash
-sudo apt install make  
-sudo apt install build-essential
-sudo apt install libssl-dev 
-sudo apt install pkg-config
+sudo apt install make build-essential libssl-dev pkg-config
 ```
 
-Install Air for hot reload && golang-migrate for migrations
+Install [air](https://github.com/air-verse/air) for hot reload && [migrate](https://github.com/golang-migrate/migrate) for migrations:
 ```bash
 go install github.com/air-verse/air@latest
 go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
@@ -19,16 +16,18 @@ go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@lat
 To view Postgres DB, install the [Postgres extension](https://marketplace.visualstudio.com/items?itemName=ckolkman.vscode-postgres) in VSC, or a SQL manager like DBeaver
 
 ## SQL Docker container setup
-Install Docker & Docker Desktop
+Install [Docker Engine](https://docs.docker.com/engine/install/) & [Docker Desktop](https://docs.docker.com/desktop/setup/install/linux/)
 
-run 
+Get the secrets files (`.dev.env`, `.env`) from an admin and place them in the art-market-backend directory.
+
+Run:
 ```bash
 make create-db-container
 
 make create-db
 ```
 
-## Running 
+## Running the backend:
 ```bash
 make run
 ```
@@ -40,13 +39,12 @@ To add new api:
 1. Change the GraphQL schemas, in '/graph/schemas/'
 2. Run the following command to generate the corresponding resolvers and models
 ```bash 
-   make graphql-generate
+make graphql-generate
 ```
 3. Implementing the resolver function
 4. Test with GraphQL playground at http://localhost:8080/api
 
 ## Deployment 
-
 Connect to remote Digital Ocean droplet with Docker 
 ```bash
 eval "$(ssh-agent -s)"
