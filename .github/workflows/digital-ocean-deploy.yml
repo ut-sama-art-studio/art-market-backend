@@ -21,15 +21,6 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.DROPLET_IP }} >> ~/.ssh/known_hosts
 
-      - name: Copy .env and docker-compose.yml to droplet
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.DROPLET_IP }}
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.prod.yml,.env"
-          target: "~/art-market-backend"
-
       - name: Deploy with Docker Compose via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:

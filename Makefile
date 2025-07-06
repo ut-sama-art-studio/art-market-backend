@@ -54,12 +54,17 @@ context-remote:
 	@ssh-add ~/.ssh/id_rsa
 	@docker info 
 
-# for rebuildling docker compose
+# rebuilds with docker-compose
 docker-rebuild:
 	@docker-compose down
 	@docker-compose up --build -d
 
+# removes all docker files
 docker-prune:
 	@docker image prune -f
 	@docker volume prune -f
 	@docker container prune -f
+
+# connects to Digital Ocean droplet using private key
+ssh:
+	@ssh -i ~/.ssh/dig_ocean_art_market_ssh root@143.198.44.171
