@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-      
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,12 +14,37 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/art-market-backend:latest
+          platforms: linux/amd64
+
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.DROPLET_IP }} >> ~/.ssh/known_hosts
+
+      - name: Copy Docker Compose and .env files to droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yml,.env"
+          target: "~/art-market-backend"
+          overwrite: true
 
       - name: Deploy with Docker Compose via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -29,8 +54,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/art-market-backend
+            docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
             docker-compose down
-            docker-compose up --build -d
+            docker-compose pull
+            docker-compose up -d
 
       - name: Verify deployment via SSH
         uses: appleboy/ssh-action@v1.0.3
