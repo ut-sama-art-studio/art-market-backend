@@ -19,7 +19,6 @@ WORKDIR /app
 ENV ENV=production
 
 COPY --from=builder /app/server-binary .
-COPY --from=builder /app/.env .env
 COPY --from=builder /app/database/migrations /app/database/migrations
 
 EXPOSE 8080
