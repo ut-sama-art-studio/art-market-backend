@@ -55,4 +55,25 @@ jobs:
           host: ${{ secrets.DROPLET_IP }}
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: docker ps
+          script: |
+            echo "Checking running containers..."
+            docker ps
+            echo "Verifying art-market-api-prod container is running..."
+            if docker ps --filter "name=^art-market-api-prod$" --format '{{.Names}}' | grep -q "^art-market-api-prod$"; then
+              echo "Success: art-market-api-prod container is running"
+            else
+              echo "Error: art-market-api-prod container is not running"
+              docker ps -a  # Show all containers (including stopped) for debugging
+              exit 1
+            fi
+
+      - name: Verify server is online
+        run: |
+          sleep 10
+          response=$(curl --silent --write-out "%{http_code}" -o response.txt https://utsama.kevicai.com/api/hello-world)
+          if [ "$response" -eq 200 ]; then
+            echo "Server is online! Response: $(cat response.txt)"
+          else
+            echo "Failed to verify server. HTTP Status: $response, Response: $(cat response.txt)"
+            exit 1
+          fi
