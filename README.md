@@ -21,6 +21,12 @@ Install [Docker Engine](https://docs.docker.com/engine/install/) & [Docker Deskt
 Get the secrets files (`.dev.env`, `.env`) from an admin and place them in the art-market-backend directory.
 
 Run:
+
+Start docker service (if not already running)
+```bash
+systemctl start docker
+```
+
 ```bash
 make create-db-container
 
