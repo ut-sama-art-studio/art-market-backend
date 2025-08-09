@@ -29,7 +29,7 @@ services:
     ports:
       - "${PORT}:${PORT}"
     volumes:
-      - ./path/to/.env:/app/.env # mount host file into container
+      - ./.env:/app/.env # mount host file into container
     depends_on:
       db:
         condition: service_healthy
